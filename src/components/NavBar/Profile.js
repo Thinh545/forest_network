@@ -5,12 +5,16 @@ const MenuItemGroup = Menu.ItemGroup;
 
 const menu = (
     <Menu>
-        <Menu.Item disabled>
-            Name
+        <Menu.Item key="name">
+            Name - Email
         </Menu.Item>
 
-        <Menu.Item disabled>
-            Email
+        <Menu.Item key="2">
+            Option 1
+        </Menu.Item>
+
+        <Menu.Item key="3">
+            Option 2
         </Menu.Item>
 
     </Menu>
