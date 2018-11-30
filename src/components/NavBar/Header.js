@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Layout, Menu, Icon, Row, Col, Button, Avatar } from 'antd';
+import { Layout, Menu, Icon, Button, Avatar } from 'antd';
 import SearchBar from './Search'
 import Profile from './Profile'
 import { switchEditMode } from '../../redux/actions/LeftSide';
