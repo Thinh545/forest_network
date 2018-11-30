@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Layout, Menu, Icon, Row, Col, Button } from 'antd'
+import { Layout, Menu, Icon, Button, Avatar } from 'antd'
 import SearchBar from './Search'
 import Profile from './Profile'
 
