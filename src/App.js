@@ -1,7 +1,6 @@
 import 'antd/dist/antd.css';
 import React, { Component } from 'react';
 import { Layout, Menu, Breadcrumb, Icon } from 'antd';
-import './App.css';
 
 import Header from './components/NavBar/Header'
 
