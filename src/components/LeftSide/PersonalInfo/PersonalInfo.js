@@ -1,80 +1,85 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import { Layout, Icon, Input } from 'antd';
 import './PI.css';
+import {
+    updateUsername,
+    updateDescription,
+    updateLocation,
+    updateWebsite
+}from '../../../redux/actions/LeftSide';
 
 const { Content } = Layout;
 
 class PersonalInfo extends Component{
-    constructor(props){
-        super(props)
-        this.state = {
-            enableEdit: true,
-        }
-    }
-
     render(){
         return(
             <Content style={styles.wrapper}>
-                {!this.state.enableEdit && <Content style = {styles.username}>
-                    Youtube
+                {!this.props.enableEdit && <Content style = {styles.username}>
+                    {this.props.username}
                 </Content>}
-               {this.state.enableEdit && <Input
+               {this.props.enableEdit && <Input
                     style = {styles.username}
-                    value={'Yotube'}
+                    value={this.props.username}
+                    onChange = {(e) => {
+                        this.props.updateUsername(e.target.value);
+                    }}
                 />}
 
                 <Content style = {{marginBottom: 10}}>
-                    <a href = '@Youtube'>@Youtube</a>
+                    <a href = {this.props.channel}>{this.props.channel}</a>
                 </Content>
 
-                {!this.state.enableEdit && <Content style = {{color: 'black'}}>
-                    Imagine if you couldn’t watch the videos you love. We support copyright reform with an Article 13 that works for everyone. #SaveYourInternet
+                {!this.props.enableEdit && <Content style = {{color: 'black'}}>
+                    {this.props.description}
                 </Content>}
-                {this.state.enableEdit && <Content style = {{color: 'black'}}>
+                {this.props.enableEdit && <Content style = {{color: 'black'}}>
                     Description
                     <Input
                         style = {{color: 'black'}}
-                        value = 'Imagine if you couldn’t watch the videos you love. We support copyright reform with an Article 13 that works for everyone. #SaveYourInternet'
+                        value = {this.props.description}
+                        onChange = {(e) => {
+                            this.props.updateDescription(e.target.value);
+                        }}
                     />
                 </Content>}
 
-                {!this.state.enableEdit && <Content style = {styles.joinDate}>
+                {!this.props.enableEdit && <Content style = {styles.joinDate}>
                     <Icon type="environment" style = {{marginRight: 5}}/>
-                    San Bruno, CA
+                    {this.props.location}
                 </Content>}
-                {this.state.enableEdit && <Content style = {styles.joinDate}>
+                {this.props.enableEdit && <Content style = {styles.joinDate}>
                     <Icon type="environment" style = {{marginRight: 5}}/>
                     <Input
                         style = {{marginRight: 5, color: 'black'}}
-                        value = 'San Bruno, CA'
+                        value = {this.props.location}
+                        onChange = {(e) => {
+                            this.props.updateLocation(e.target.value);
+                        }}
                     />
                 </Content>}
 
-                {!this.state.enableEdit && <Content style = {styles.joinDate}>
+                {!this.props.enableEdit && <Content style = {styles.joinDate}>
                     <Icon type="link" style = {{marginRight: 5}}/>
-                    <a href = 'https://www.youtube.com'>https://www.youtube.com</a>
+                    <a href = {this.props.website}>{this.props.website}</a>
                 </Content>}
-                {this.state.enableEdit && <Content style = {styles.joinDate}>
+                {this.props.enableEdit && <Content style = {styles.joinDate}>
                     <Icon type="link" style = {{marginRight: 5}}/>
                     <Input
                         style = {{marginRight: 5, color: 'black'}}
-                        value = 'https://www.youtube.com'
+                        value = {this.props.website}
+                        onChange = {(e) => {
+                            this.props.updateWebsite(e.target.value);
+                        }}
                     />
                 </Content>}
 
-                {!this.state.enableEdit && <Content style = {styles.joinDate}>
+                {!this.props.enableEdit && <Content style = {styles.joinDate}>
                     <Icon type="calendar" style = {{marginRight: 10}}/>
-                    Joined November 2007
-                </Content>}
-                {this.state.enableEdit && <Content style = {styles.joinDate}>
-                    <Icon type="calendar" style = {{marginRight: 10}}/>
-                    <Input
-                        style = {{marginRight: 10, color: 'black'}}
-                        value = 'Joined November 2007'
-                    />
+                    {this.props.joinDate}
                 </Content>}
 
-                {!this.state.enableEdit &&  <Content style = {{marginTop: 20}}>
+                {!this.props.enableEdit &&  <Content style = {{marginTop: 20}}>
                     <Content
                         style = {
                             {
@@ -128,4 +133,30 @@ const styles = {
     }
 };
 
-export default PersonalInfo;
+
+const mapStateToProps = ( state ) => ({
+    enableEdit: state['editInfo'].enableEdit,
+    username: state['editInfo'].username,
+    channel: state['editInfo'].channel,
+    description: state['editInfo'].description,
+    location: state['editInfo'].location,
+    website: state['editInfo'].website,
+    joinDate: state['editInfo'].joinDate,
+});
+
+const mapDispatchToProps = ( dispatch ) => ({
+    updateUsername: ( name ) => {
+        return dispatch(updateUsername(name));
+    },
+    updateDescription: ( description ) => {
+        return dispatch(updateDescription(description));
+    },
+    updateLocation: ( location ) => {
+        return dispatch(updateLocation(location));
+    },
+    updateWebsite: ( website ) => {
+        return dispatch(updateWebsite(website));
+    }
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(PersonalInfo);

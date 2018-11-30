@@ -1,4 +1,5 @@
 export default {
     LOGIN: 'LOGIN',
-    SIGNUP: 'SIGNUP'
+    SIGNUP: 'SIGNUP',
+    EDITINFO: 'EDITINFO'
 };
