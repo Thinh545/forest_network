@@ -9,7 +9,7 @@ class SearchBar extends Component {
             <Search
                 placeholder="input search text"
                 onSearch={value => console.log(value)}
-                style={{ width: 200 }}
+                style={{ width: 250 }}
             />
         )
     }
