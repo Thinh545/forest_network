@@ -32,17 +32,31 @@ class Header extends Component {
                     </Menu>
                 </Layout>
 
-                <Layout mode="horizontal" style={{ lineHeight: '100px' }}>
-                    <Row>
-                        <Col span={6}>col-6</Col>
-                        <Col span={3}> <Button type="primary" ghost>Posts</Button> </Col>
-                        <Col span={3}> <Button type="primary" ghost>Following</Button> </Col>
-                        <Col span={3}> <Button type="primary" ghost>Followers</Button> </Col>
-                        <Col span={3}></Col>
-                        <Col span={6}>
-                            <Button type="danger" ghost>Edit</Button>
-                        </Col>
-                    </Row>
+                <Layout>
+                    <Menu mode="horizontal" defaultSelectedKeys={['2']} style={{ lineHeight: '64px' }}>
+                        <Menu.Item key="info" style={{ width: '70px' }}>
+                            <Avatar shape="square" size="64" icon="user" />
+                        </Menu.Item>
+                        <Menu.Item key="info" style={{ width: '230px', fontSize: '20px' }}>
+                            <strong>Channel</strong>
+                        </Menu.Item>
+
+                        <Menu.Item key="posts">
+                            Posts: <strong>0</strong>
+                        </Menu.Item>
+
+                        <Menu.Item key="following">
+                            Following: <strong>0</strong>
+                        </Menu.Item>
+
+                        <Menu.Item key="followers">
+                            Followers: <strong>0</strong>
+                        </Menu.Item>
+
+                        <Menu.Item key="edit" style={{ float: 'right' }}>
+                            <Button type='danger' ghost>Edit</Button>
+                        </Menu.Item>
+                    </Menu>
                 </Layout>
             </Layout>
         )
