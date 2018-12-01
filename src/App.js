@@ -5,7 +5,7 @@ import { Provider } from 'react-redux';
 import rootReducer from './redux/reducers';
 
 // Ant Component:
-import { Layout, Breadcrumb, Menu, Icon } from 'antd';
+import { Layout, Row, Col } from 'antd';
 
 // Self define component:
 import Posts from './components/Posts/index'
@@ -13,8 +13,7 @@ import PersonalInfo from './components/LeftSide/PersonalInfo/PersonalInfo'
 import Header from './components/NavBar/Header';
 
 
-const { Content, Sider, Footer } = Layout;
-const { SubMenu } = Menu;
+const { Content, Sider } = Layout;
 
 const store = createStore(
   rootReducer
@@ -28,15 +27,28 @@ class App extends Component {
           <Header className="header" />
           <Content style={{ padding: '0 50px' }}>
             <Layout style={{ padding: '24px 0', background: '#fff' }}>
-              <Sider width={400} style={{ background: '#fff' }}>
-                <PersonalInfo />
+
+              <Row>
+                <Col span={5}>
+                  <Sider style={{ background: '#fff' }}>
+                    <PersonalInfo />
+                  </Sider>
+                </Col>
+                <Col span={14}>
+                  <Content style={{ padding: '40px 30px 20px 30px', minHeight: 280 }}>
+                    <Posts />
+                  </Content>
+                </Col>
+                <Col span={5}>
+
+                  <Sider style={{ background: '#fff' }}>
+                    Right Sider Content
               </Sider>
-              <Content style={{ padding: '40px 30px 20px 30px', minHeight: 280 }}>
-                <Posts/>
-              </Content>
-              <Sider width={400} style={{ background: '#fff' }}>
-                Right Sider Content
-              </Sider>
+                </Col>
+              </Row>
+
+
+
             </Layout>
           </Content>
         </Layout>

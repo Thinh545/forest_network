@@ -11,7 +11,7 @@ export default class Post extends Component {
                     <Col span={2}>
                         <Avatar size="large" src="https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png" />
                     </Col>
-                    <Col span={3}><b>Nguyễn Trí Thâm</b></Col>
+                    <Col span={6}><b>Nguyễn Trí Thâm</b></Col>
                     <Col span={16}>16 phút trước</Col>
                 </Row>
 
