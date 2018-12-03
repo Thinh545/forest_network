@@ -10,6 +10,8 @@ import { Layout, Row, Col, Tabs } from 'antd';
 // Self define component:
 import Posts from './components/Posts/index'
 import PersonalInfo from './components/LeftSide/PersonalInfo/PersonalInfo'
+import Follower from './components/Follower/Follower';
+import Following from './components/Following/Following';
 import Header from './components/NavBar/Header';
 
 const { Content, Sider } = Layout;
@@ -39,8 +41,12 @@ class App extends Component {
                     <TabPane tab="Posts" key="1">
                       <Posts />
                     </TabPane>
-                    <TabPane tab="Following" key="2">Content of Tab Pane 2</TabPane>
-                    <TabPane tab="Followers" key="3">Content of Tab Pane 3</TabPane>
+                    <TabPane tab="Following" key="2">
+                      <Following/>
+                    </TabPane>
+                    <TabPane tab="Followers" key="3">
+                      <Follower/>
+                    </TabPane>
                   </Tabs>
                 </Col>
                 <Col span={5}>
