@@ -5,15 +5,15 @@ import { Provider } from 'react-redux';
 import rootReducer from './redux/reducers';
 
 // Ant Component:
-import { Layout, Row, Col } from 'antd';
+import { Layout, Row, Col, Tabs } from 'antd';
 
 // Self define component:
 import Posts from './components/Posts/index'
 import PersonalInfo from './components/LeftSide/PersonalInfo/PersonalInfo'
 import Header from './components/NavBar/Header';
 
-
 const { Content, Sider } = Layout;
+const TabPane = Tabs.TabPane;
 
 const store = createStore(
   rootReducer
@@ -35,12 +35,15 @@ class App extends Component {
                   </Sider>
                 </Col>
                 <Col span={14}>
-                  <Content style={{ padding: '40px 30px 20px 30px', minHeight: 280 }}>
-                    <Posts />
-                  </Content>
+                  <Tabs defaultActiveKey="1" style={{ padding: '0px 30px 20px 30px', minHeight: 280 }}>
+                    <TabPane tab="Posts" key="1">
+                      <Posts />
+                    </TabPane>
+                    <TabPane tab="Following" key="2">Content of Tab Pane 2</TabPane>
+                    <TabPane tab="Followers" key="3">Content of Tab Pane 3</TabPane>
+                  </Tabs>
                 </Col>
                 <Col span={5}>
-
                   <Sider style={{ background: '#fff' }}>
                     Right Sider Content
               </Sider>

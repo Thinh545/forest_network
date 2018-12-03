@@ -47,7 +47,7 @@ class Header extends Component {
         return (
             <Layout className="header">
                 <Layout>
-                    <Menu theme="dark" mode="horizontal" defaultSelectedKeys={['2']} style={{ lineHeight: '50px' }} >
+                    <Menu theme="dark" mode="horizontal" style={{ lineHeight: '50px' }} >
                         <Menu.Item key="profile">
                             <Profile></Profile>
                         </Menu.Item>
@@ -71,7 +71,7 @@ class Header extends Component {
                 </Layout>
 
                 <Layout>
-                    <Menu mode="horizontal" defaultSelectedKeys={['2']} style={{ lineHeight: '64px' }}>
+                    <Menu mode="horizontal" style={{ lineHeight: '64px' }}>
                         <Menu.Item key="info" style={{ width: '70px' }}>
                             <Avatar shape="square" size="64" icon="user" />
                         </Menu.Item>
