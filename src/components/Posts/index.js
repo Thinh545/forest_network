@@ -6,6 +6,8 @@ export default class index extends Component {
         return (
             <div>
                 <Post/>
+                <Post/>
+                <Post/>
             </div>
         )
     }

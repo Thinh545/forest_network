@@ -12,3 +12,11 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
+
+.read-more {
+  color: #4286f4
+}
+
+.post-button:hover {
+  color: #4286f4
+}

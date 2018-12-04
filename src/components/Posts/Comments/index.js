@@ -37,8 +37,7 @@ export default class index extends Component {
                             title={<a href={item.href}>{item.title}</a>}
                             description={item.description}
                         />
-                        <div style={{marginLeft: '12%'}}>{item.content}</div>
-                        
+                        <div style={{marginLeft: '6%'}}>{item.content}</div>
                     </List.Item>
                 )}
             />

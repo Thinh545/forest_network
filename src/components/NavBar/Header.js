@@ -134,7 +134,7 @@ class Header extends Component {
                                 onClick={() => {
                                     this.props.switchEditMode(true);
                                 }}
-                            >Edit</Button>}
+                            >Edit Profile</Button>}
                             {this.props.enableEdit && <Button
                                 type='danger'
                                 ghost
