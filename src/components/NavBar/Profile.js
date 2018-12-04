@@ -52,7 +52,6 @@ class Profile extends Component {
 
     render() {
         const menu = this.getMenu();
-        console.log(this.avatarUrl)
 
         return (
             

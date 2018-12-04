@@ -44,6 +44,8 @@ class Header extends Component {
     }
 
     render() {
+        console.log(this.props.followers)
+
         return (
             <Layout className="header">
                 <Row style={{ position: 'fixed', zIndex: 999, width: '100%' }}>
@@ -66,15 +68,15 @@ class Header extends Component {
                             &nbsp;&nbsp;Messages
                         </Menu.Item>
 
-                        <Menu.Item key="tweet" style={{ float: 'right' }}>
+                        <Menu.Item key="tweet" style={{ float: 'right' }} disabled>
                             <Button type="primary" icon="form">Tweet</Button>
                         </Menu.Item>
 
-                        <Menu.Item key="profile" style={{ float: 'right' }}>
+                        <Menu.Item key="profile" style={{ float: 'right' }} disabled>
                             <Profile></Profile>
                         </Menu.Item>
 
-                        <Menu.Item key="search" style={{ float: 'right' }}>
+                        <Menu.Item key="search" style={{ float: 'right' }} disabled>
                             <SearchBar></SearchBar>
                         </Menu.Item>
                     </Menu>
@@ -86,7 +88,7 @@ class Header extends Component {
 
                 <Row>
                     <Affix offsetTop={40}>
-                        <Menu mode="horizontal" style={{ lineHeight: '50px' }}>
+                        <Menu mode="horizontal" style={{ lineHeight: '50px' }} selectable={false}>
                             <Menu.Item key="info" style={{ width: '70px' }}>
                                 <Avatar shape="square" size="48" icon="user" />
                             </Menu.Item>
@@ -99,11 +101,11 @@ class Header extends Component {
                             </Menu.Item>
 
                             <Menu.Item key="following">
-                                Following: <strong>0</strong>
+                                Following: <strong>{this.props.following}</strong>
                             </Menu.Item>
 
                             <Menu.Item key="followers">
-                                Followers: <strong>0</strong>
+                                Followers: <strong>{this.props.followers}</strong>
                             </Menu.Item>
 
                             <Menu.Item key="edit" style={{ float: 'right' }}>
@@ -162,7 +164,9 @@ const MapStateToProps = (state) => ({
     username: state['editInfo'].username,
     description: state['editInfo'].description,
     location: state['editInfo'].location,
-    website: state['editInfo'].website
+    website: state['editInfo'].website,
+    following: state['following'].followings.length,
+    followers: state['follower'].followers.length,
 });
 
 const MapDispatchToProps = (dispatch) => ({
