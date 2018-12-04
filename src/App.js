@@ -27,7 +27,7 @@ class App extends Component {
       <Provider store={store}>
         <Layout>
           <Header className="header" />
-          <Content style={{ padding: '0 50px' }}>
+          <Content style={{ padding: '0 50px', marginTop: "5px" }}>
             <Layout style={{ padding: '24px 0', background: '#fff' }}>
 
               <Row>
@@ -55,8 +55,6 @@ class App extends Component {
               </Sider>
                 </Col>
               </Row>
-
-
 
             </Layout>
           </Content>

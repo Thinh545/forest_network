@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Layout, Menu, Icon, Button, Avatar, Row, Badge, Affix } from 'antd';
+import { Layout, Menu, Icon, Button, Avatar, Row, Badge, Affix, Col } from 'antd';
 import SearchBar from './Search'
 import Profile from './Profile'
 import { switchEditMode } from '../../redux/actions/LeftSide';
@@ -20,6 +20,7 @@ class Header extends Component {
             location: null,
             website: null,
             pressSave: false,
+            isAffixChange: false,
         }
     }
 
@@ -43,13 +44,36 @@ class Header extends Component {
         }
     }
 
-    render() {
-        console.log(this.props.followers)
+    handleAffixChange = () => {
+        console.log(this.state.isAffixChange)
 
+        this.setState({
+            isAffixChange: !this.state.isAffixChange,
+        })
+    }
+
+    channelProfile = () => {
+        if (this.state.isAffixChange) {
+            return (
+                [
+                    <Col span={1}> <Avatar shape="square" src={this.props.photoUrl} /></Col>,
+                    <Col span={4} style={{fontSize: '20px' }}><strong>{this.props.username}</strong></Col>
+                ]
+            )
+        } else {
+            return (
+                <Col span={5}>
+                    <img src={this.props.photoUrl} style={{ position: "absolute", borderRadius: "50%", zIndex: 3, top: "-150px", maxWidth: "100%", width: "210px" }}></img>
+                </Col>
+            )
+        }
+    }
+
+    render() {
         return (
             <Layout className="header">
                 <Row style={{ position: 'fixed', zIndex: 999, width: '100%' }}>
-                    <Menu theme="dark" mode="horizontal" style={{ lineHeight: '40px' }} >
+                    <Menu theme="dark" mode="horizontal" style={{ lineHeight: '40px' }} selectable={false}>
                         <Menu.Item key="home">
                             <Icon type="home" />Home
                         </Menu.Item>
@@ -60,7 +84,7 @@ class Header extends Component {
                             </Badge>
                             &nbsp;&nbsp;Notifications
                         </Menu.Item>
-    
+
                         <Menu.Item key="message">
                             <Badge dot={true}>
                                 <Icon type="message" />
@@ -68,15 +92,15 @@ class Header extends Component {
                             &nbsp;&nbsp;Messages
                         </Menu.Item>
 
-                        <Menu.Item key="tweet" style={{ float: 'right' }} disabled>
+                        <Menu.Item key="tweet" style={{ float: 'right' }}>
                             <Button type="primary" icon="form">Tweet</Button>
                         </Menu.Item>
 
-                        <Menu.Item key="profile" style={{ float: 'right' }} disabled>
+                        <Menu.Item key="profile" style={{ float: 'right' }}>
                             <Profile></Profile>
                         </Menu.Item>
 
-                        <Menu.Item key="search" style={{ float: 'right' }} disabled>
+                        <Menu.Item key="search" style={{ float: 'right' }}>
                             <SearchBar></SearchBar>
                         </Menu.Item>
                     </Menu>
@@ -86,17 +110,73 @@ class Header extends Component {
                     <img src="https://www.image.ie/images/logo.svg?v=3" style={{ inlineSize: "-webkit-fill-available", maxHeight: "360px" }}></img>
                 </Row>
 
-                <Row>
-                    <Affix offsetTop={40}>
-                        <Menu mode="horizontal" style={{ lineHeight: '50px' }} selectable={false}>
-                            <Menu.Item key="info" style={{ width: '70px' }}>
-                                <Avatar shape="square" size="48" icon="user" />
-                            </Menu.Item>
-                            <Menu.Item key="info" style={{ width: '230px', fontSize: '20px' }}>
-                                <strong>Channel</strong>
-                            </Menu.Item>
+                <Affix offsetTop={40} onChange={this.handleAffixChange}>
+                    <Row type="flex" align="middle" style={{ background: "white", boxShadow: "0px 1px 3px 0px" }}>
+                        <Col span={1}></Col>
 
-                            <Menu.Item key="posts">
+                        {this.channelProfile()}
+
+                        {/* <Col span={1}> <Avatar shape="square" icon="user" /></Col>
+
+                        <Col span={4} style={{ width: '230px', fontSize: '20px' }}><strong>Channel</strong></Col> */}
+
+                        <Col span={2} align="center">Posts<br /><strong>0</strong></Col>
+
+                        <Col span={2} align="center">Following<br /><strong>{this.props.following}</strong></Col>
+
+                        <Col span={2} align="center">Followers<br /><strong>{this.props.followers}</strong></Col>
+
+                        <Col span={7}></Col>
+                        <Col span={4}>
+                            {!this.props.enableEdit && <Button
+                                type='danger'
+                                ghost
+                                onClick={() => {
+                                    this.props.switchEditMode(true);
+                                }}
+                            >Edit</Button>}
+                            {this.props.enableEdit && <Button
+                                type='danger'
+                                ghost
+                                onClick={() => {
+                                    this.props.switchEditMode(false);
+                                    this.props.updateInformation(
+                                        this.state.username,
+                                        this.state.description,
+                                        this.state.location,
+                                        this.state.website
+                                    )
+                                }}
+                                style={{ marginRight: '5%' }}
+                            >Cancel</Button>}
+                            {this.props.enableEdit && <Button
+                                type='danger'
+                                ghost
+                                onClick={() => {
+                                    this.props.switchEditMode(false);
+                                    this.props.updateInformation(
+                                        this.props.username,
+                                        this.props.description,
+                                        this.props.location,
+                                        this.props.website
+                                    );
+                                    this.setState({
+                                        username: this.props.username,
+                                        description: this.props.description,
+                                        location: this.props.location,
+                                        website: this.props.website,
+                                        pressSave: true
+                                    });
+                                }}
+                            >Save</Button>}
+                        </Col>
+
+                    </Row>
+
+
+                    {/* <Menu mode="horizontal" style={{ lineHeight: '50px' }} selectable={false}>                             */}
+
+                    {/* <Menu.Item key="posts">
                                 Posts: <strong>0</strong>
                             </Menu.Item>
 
@@ -150,10 +230,9 @@ class Header extends Component {
                                         });
                                     }}
                                 >Save</Button>}
-                            </Menu.Item>
-                        </Menu>
-                    </Affix>
-                </Row>
+                            </Menu.Item> */}
+                    {/* </Menu> */}
+                </Affix>
             </Layout>
         )
     }
@@ -161,6 +240,7 @@ class Header extends Component {
 
 const MapStateToProps = (state) => ({
     enableEdit: state['editInfo'].enableEdit,
+    photoUrl: state['editInfo'].photoUrl,
     username: state['editInfo'].username,
     description: state['editInfo'].description,
     location: state['editInfo'].location,

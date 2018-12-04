@@ -15,8 +15,6 @@ class PersonalInfo extends Component {
     render() {
         return (
             <Content style={styles.wrapper}>
-                <img src={this.props.photoUrl} style={{borderRadius: "50%", width: "100%", marginBottom: "10px"}}></img>
-
                 {!this.props.enableEdit && <Content style={styles.username}>
                     {this.props.username}
                 </Content>}
