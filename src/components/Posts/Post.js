@@ -86,7 +86,7 @@ export default class Post extends Component {
 
                 </div>
                 <PostDetail
-                    visible = {this.state.visible}
+                    visible = {this.state.visible}  
                     handleOk = {this.handleOk}
                     handleCancel = {this.handleCancel}
                 />

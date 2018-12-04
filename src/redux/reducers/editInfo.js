@@ -1,5 +1,6 @@
 let initialState = {
     enableEdit: false,
+    photoUrl: 'YoutubeAva.png',
     username: 'Youtube',
     channel: '@Youtube',
     description: 'Imagine if you couldn’t watch the videos you love. We support copyright reform with an Article 13 that works for everyone. #SaveYourInternet',

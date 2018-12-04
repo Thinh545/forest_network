@@ -1,7 +1,7 @@
 let initialState = {
-    displayName: 'ABC',
-    avatarUrl: '',
-    isLogin: false
+    displayName: 'HoaMi0Hot',
+    avatarUrl: 'anonymous.png',
+    isLogin: true
 }
 
 const auth = (state = initialState, action) => {

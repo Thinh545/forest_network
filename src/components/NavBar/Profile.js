@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
 import { Dropdown, Menu, Avatar } from 'antd';
 
 const MenuItemGroup = Menu.ItemGroup;
@@ -21,13 +22,51 @@ const menu = (
 );
 
 class Profile extends Component {
+    getMenu = () => {
+        if (this.props.isLogin)
+            return (
+                <Menu>
+                    <Menu.Item key="name">
+                        {this.props.displayName}
+                    </Menu.Item>
+
+                    <Menu.Item key="logout">
+                        Logout
+                    </Menu.Item>
+                </Menu>
+            )
+
+        else
+            return (
+                <Menu>
+                    <Menu.Item key="login">
+                        Login
+                    </Menu.Item>
+
+                    <Menu.Item key="register">
+                        Register
+                    </Menu.Item>
+                </Menu>
+            )
+    }
+
     render() {
+        const menu = this.getMenu();
+        console.log(this.avatarUrl)
+
         return (
+            
             <Dropdown overlay={menu} placement="bottomLeft">
-                <Avatar size={45} src='anonymous.png' />
+                <Avatar size={35} src={this.props.avatarUrl} />
             </Dropdown>
         )
     }
 }
 
-export default Profile;
+const MapStateToProps = (state) => ({
+    displayName: state['auth'].displayName,
+    avatarUrl: state['auth'].avatarUrl,
+    isLogin: state['auth'].isLogin,
+});
+
+export default connect(MapStateToProps, null)(Profile);
