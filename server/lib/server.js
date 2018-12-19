@@ -8,12 +8,14 @@ const _ = require('lodash');
 const db = require('./db');
 const Block = require('./block');
 const Account = require('./account');
-const { decode, verify, hash } = require('./transaction');
+const Transaction = require('./transaction');
+const { decode, verify, hash } = require('./tx');
 
 // 24 hours
 const BANDWIDTH_PERIOD = 86400;
 const INITIAL_APP_HASH = Buffer.from('forest.network by Kha Do');
 const ACCOUNT_KEY = Buffer.from('account');
+const OBJECT_KEY = Buffer.from('object');
 const MAX_BLOCK_SIZE = 22020096;
 const RESERVE_RATIO = 1;
 const MAX_CELLULOSE = Number.MAX_SAFE_INTEGER;
@@ -64,7 +66,7 @@ const app = {
   },
 
   async commit(_req) {
-    console.log(`Commit block with app hash ${this.appHash.toString('hex')}`);
+    console.log(`Commit block with app hash ${this.appHash.toString('hex').toUpperCase()}`);
     await this.blockTransaction.commit();
     return {
       data: this.appHash,
@@ -72,6 +74,9 @@ const app = {
   },
 
   async executeTx(req, dbTransaction, isCheckTx) {
+    // Tag by source account and to account
+    const tags = [];
+
     if (isCheckTx) {
       console.log('Check tx');
     } else {
@@ -150,6 +155,21 @@ const app = {
       await found.save({ transaction: dbTransaction });
       await account.save({ transaction: dbTransaction });
       console.log(`${tx.hash}: ${account.address} transfered ${amount} to ${address}`);
+    } else if (operation === 'post') {
+      const { content, keys } = tx.params;
+      console.log(`${tx.hash}: ${account.address} posted ${content.length} bytes with ${keys.length} keys`);
+    } else if (operation === 'update_account') {
+      const { key, value } = tx.params;
+      console.log(`${tx.hash}: ${account.address} update ${key} with ${value.length} bytes`);
+    } else if (operation === 'interact') {
+      const { object, content } = tx.params;
+      // Check if object exists
+      const transaction = await Transaction.findByPk(object, { transaction: dbTransaction });
+      if (!transaction) {
+        throw Error('Object does not exist');
+      }
+      tx.params.address = transaction.author;
+      console.log(`${tx.hash}: ${account.address} interact ${object} with ${content.length} bytes`);
     } else {
       throw Error('Operation is not support.');
     }
@@ -161,13 +181,22 @@ const app = {
       throw Error('Account balance must greater blocked amount due to bandwidth used');
     }
 
-    // Tag by source account and to account
-    const tags = [];
+    // Add transaction to db
+    await Transaction.create({
+      hash: tx.hash,
+      author: account.address,
+    }, {
+      transaction: dbTransaction,
+    });
+
     if (tx.account) {
       tags.push({ key: ACCOUNT_KEY, value: Buffer.from(tx.account) });
     }
-    if (tx.params && tx.params.address) {
+    if (tx.params && tx.params.address && tx.params.address !== tx.account) {
       tags.push({ key: ACCOUNT_KEY, value: Buffer.from(tx.params.address) });
+    }
+    if (tx.params && tx.params.object) {
+      tags.push({ key: OBJECT_KEY, value: Buffer.from(tx.params.object) });
     }
     tx.tags = tags;
     return tx;

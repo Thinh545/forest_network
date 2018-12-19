@@ -3,13 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
-    "start": "node ./bin/www"
+    "start": "nodemon ./bin/www"
   },
   "dependencies": {
     "axios": "^0.18.0",
+    "base32.js": "^0.1.0",
+    "body-parser": "^1.18.3",
     "cookie-parser": "~1.4.3",
     "debug": "~2.6.9",
     "express": "~4.16.0",
-    "morgan": "~1.9.0"
+    "morgan": "~1.9.0",
+    "sequelize": "^4.42.0",
+    "stellar-base": "^0.10.0",
+    "varstruct": "^6.1.2"
   }
 }

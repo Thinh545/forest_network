@@ -1,9 +1,9 @@
 const express = require('express');
 const {
-  getTransactionInfo
-} = require('./../controllers/index');
+  getAmount
+} = require('../controllers/account');
 const router = express.Router();
 
-router.get('/', getTransactionInfo);
+router.get('/:public_key/amount', getAmount);
 
 module.exports = router;

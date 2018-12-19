@@ -21,24 +21,27 @@ const PaymentParams = vstruct([
   { name: 'amount', type: vstruct.UInt64BE },
 ]);
 
-const EncryptionKey = vstruct([
-  // 24 bytes as nonce for box, 16 first bytes is IV
-  { name: 'nonce', type: vstruct.Buffer(24) },
-  // 42 bytes of key + 10 bytes after box
-  { name: 'box', type: vstruct.Buffer(42) },
-]);
-
 const PostParams = vstruct([
   // Maximum length 65536 in bytes
   { name: 'content', type: vstruct.VarBuffer(vstruct.UInt16BE) },
   // Private share no more than 256 - 1 (me) people
-  // Key size = 0 => no encrypt
-  // Key size = 1 => only me
-  { name: 'keys', type: vstruct.VarArray(vstruct.UInt8, EncryptionKey) }
+  // 0 key => public post
+  // >= 1 key => share with specific people, may including me. First 16/24 bytes of content are nonce/iv
+  { name: 'keys', type: vstruct.VarArray(vstruct.UInt8, vstruct.Buffer(42)) },
 ]);
 
 const UpdateAccountParams = vstruct([
-  { name: 'name', type: vstruct.VarString(vstruct.UInt8) },
+  { name: 'key', type: vstruct.VarString(vstruct.UInt8) },
+  { name: 'value', type: vstruct.VarBuffer(vstruct.UInt16BE) },
+]);
+
+const InteractParams = vstruct([
+  // Post or comment (or something else?)
+  { name: 'object', type: vstruct.Buffer(32) },
+  // Encrypt with same post key (if any)
+  // Depend on object on parent object keys. First 16 bytes of content are nonce/iv
+  { name: 'content', type: vstruct.VarBuffer(vstruct.UInt16BE) },
+  // React if '', like, love, haha, anrgy, sad, wow
 ]);
 
 function encode(tx) {
@@ -50,7 +53,7 @@ function encode(tx) {
     case 'create_account':
       params = CreateAccountParams.encode({
         ...tx.params,
-        address: base32.decode(tx.params.address),
+        address: Buffer.from(base32.decode(tx.params.address)),
       });
       operation = 1;
       break;
@@ -58,7 +61,7 @@ function encode(tx) {
     case 'payment':
       params = PaymentParams.encode({
         ...tx.params,
-        address: base32.decode(tx.params.address),
+        address: Buffer.from(base32.decode(tx.params.address)),
       });
       operation = 2;
       break;
@@ -73,13 +76,21 @@ function encode(tx) {
       operation = 4;
       break;
 
+    case 'interact':
+      params = InteractParams.encode({
+        ...tx.params,
+        object: Buffer.from(tx.params.object, 'hex'),
+      });
+      operation = 5;
+      break;
+
     default:
       throw Error('Unspport operation');
   }
 
   return Transaction.encode({
     version: 1,
-    account: base32.decode(tx.account),
+    account: Buffer.from(base32.decode(tx.account)),
     sequence: tx.sequence,
     memo: tx.memo,
     operation,
@@ -119,6 +130,12 @@ function decode(data) {
       params = UpdateAccountParams.decode(tx.params);
       break;
     
+    case 5:
+      operation = 'interact';
+      params = InteractParams.decode(tx.params);
+      params.object = params.object.toString('hex').toUpperCase();
+      break;
+    
     default:
       throw Error('Unspport operation');
   }
@@ -133,4 +150,7 @@ function decode(data) {
   };
 }
 
-module.exports = { encode, decode };
+module.exports = {
+  encode,
+  decode,
+};
