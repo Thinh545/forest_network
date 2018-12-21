@@ -32,32 +32,33 @@ module.exports = {
 
         if (!_.isEmpty(public_key)) {
             try {
+                let account = {
+                    address: public_key,
+                    balance: 0,
+                    sequence: 0,
+                    bandwidth: 0,
+                    bandwidthTime: null,
+                }
+
                 const url = searchTransactions + '\'' + public_key + '\'"';
                 const data_request = await axios.default.get(url);
 
                 const txs = data_request.data.result.txs;
-                let amount = 0; // Số dư 
-                let sequence = 0; // Biến đếm thứ tự giao dịch
-                let account = '';
-                let address = '';
 
                 txs.forEach((trans, index) => {
                     let buf = Buffer.from(trans.tx, 'base64');
                     let data_trans = v1.decode(buf);
 
                     if (data_trans.operation == 'payment') {
-                        account = data_trans.account;
-                        address = data_trans.params.address;
-
-                        if (account === public_key) {
-                            amount -= data_trans.params.amount;
+                        if (data_trans.account === public_key) {
+                            account.balance -= data_trans.params.amount;
                         } else {
-                            amount += data_trans.params.amount;
+                            account.balance += data_trans.params.amount;
                         }
                     }
 
                     if (data_trans.account == public_key) {
-                        ++sequence;
+                        account.sequence = data_trans.sequence;
                     }
                 });
 
@@ -68,11 +69,7 @@ module.exports = {
                 res.status(200);
                 data_return.status = 200;
                 data_return.msg = 'OK';
-                data_return.data = {
-                    amount: amount,
-                    sequence: sequence,
-                    bandwidth: 0
-                }
+                data_return.data = account;
             } catch (err) {
                 res.status(500);
             }
