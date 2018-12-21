@@ -17,6 +17,7 @@
     "moment": "^2.23.0",
     "mongoose": "^5.4.0",
     "morgan": "~1.9.0",
+    "nodemon": "^1.18.9",
     "sequelize": "^4.42.0",
     "stellar-base": "^0.10.0",
     "varstruct": "^6.1.2"
