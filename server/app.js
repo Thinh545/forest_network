@@ -4,6 +4,7 @@ const cookieParser = require('cookie-parser');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const logger = require('morgan');
+const cors = require('cors')
 require('dotenv').config()
 
 // Configs
@@ -16,6 +17,7 @@ const accountRouter = require('./routes/account');
 
 const app = express();
 
+app.use(cors({credentials: true, origin: true}));
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
