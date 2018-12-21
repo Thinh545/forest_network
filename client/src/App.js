@@ -13,6 +13,7 @@ import PersonalInfo from './components/LeftSide/PersonalInfo/PersonalInfo'
 import Follower from './components/Follower/Follower';
 import Following from './components/Following/Following';
 import Header from './components/NavBar/Header';
+import UserBlockChainInfo from './components/RightSide/UserBlockChainInfo';
 
 const { Content, Sider } = Layout;
 const TabPane = Tabs.TabPane;
@@ -50,9 +51,9 @@ class App extends Component {
                   </Tabs>
                 </Col>
                 <Col span={5}>
-                  <Sider style={{ background: '#fff' }}>
-                    Right Sider Content
-              </Sider>
+                  <Sider>
+                    <UserBlockChainInfo/>
+                  </Sider>
                 </Col>
               </Row>
 
