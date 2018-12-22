@@ -225,5 +225,51 @@ module.exports = {
     postCreateCommit: async (req, res) => {
         const tx = req.body.tx;
         res.send(tx);
+    },
+
+    getPaymenParams: (req, res) => {
+        const account = req.query.account;
+        const public_key = req.query.public_key;
+        const amount = req.query.amount;
+
+        let data_return = {
+            status: 500,
+            msg: 'Unexpected Error',
+            data: {}
+        }
+
+        if (_.isEmpty(account) || !_.isString(account)) {
+            res.status(400)
+            data_return.status = 400;
+            data_return.msg = 'account must be a string and not empty !'
+        } else if(_.isEmpty(public_key) || !_.isString(public_key)) {
+            res.status(400)
+            data_return.status = 400;
+            data_return.msg = 'public_key must be a string and not empty !'
+        } else if(!_.isNumber(amount) || _.isNaN(amount) || _.isNull(amount)) {
+            res.status(400)
+            data_return.status = 400;
+            data_return.msg = 'amount must be a number and > 0 !'
+        }
+        else {
+            const tx = {
+                version: 1,
+                account : account,
+                sequence: 1,
+                memo: Buffer.from('Create account'),
+                operation: 'create_account',
+                params: {
+                    address: public_key,
+                    amount: amount
+                },
+            }
+
+            res.status(200);
+            data_return.status = 200;
+            data_return.msg = 'OK !';
+            data_return.data = tx;
+        }
+
+        res.json(data_return);
     }
 }
