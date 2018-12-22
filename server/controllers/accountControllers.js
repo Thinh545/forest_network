@@ -11,18 +11,18 @@ const {
     searchTransactions
 } = require('../configs/api');
 
-// const {
-//     NETWORK_BANDWIDTH
-// } = require('./../configs/env');
+const {
+    NETWORK_BANDWIDTH,
+    MAX_CELLULOSE
+} = require('./../configs/env');
 
 // Lib
 const v1 = require('../lib/tx/v1');
 
 
-
 module.exports = {
     getInfo: async (req, res) => {
-        const public_key = req.params.public_key;
+        const public_key = req.query.public_key;
 
         let data_return = {
             status: 500,
@@ -83,8 +83,8 @@ module.exports = {
         res.json(data_return);
     },
 
-    getSequence: async (req, res) => {
-        const public_key = req.params.public_key;
+    getBalance: async (req, res) => {
+        const public_key = req.query.public_key;
 
         let data_return = {
             status: 500,
@@ -94,30 +94,36 @@ module.exports = {
 
         if (!_.isEmpty(public_key)) {
             try {
+                let balance_info = {
+                    address: public_key,
+                    balance: 0,
+                    bandwidth: 0,
+                }
+
                 const url = searchTransactions + '\'' + public_key + '\'"';
                 const data_request = await axios.default.get(url);
 
                 const txs = data_request.data.result.txs;
 
-                let sequence = 0;
-
                 txs.forEach((trans, index) => {
                     let buf = Buffer.from(trans.tx, 'base64');
                     let data_trans = v1.decode(buf);
 
-                    console.log(data_trans.account);
-                    if (data_trans.account == public_key) {
-                        ++sequence;
+                    if (data_trans.operation == 'payment') {
+                        if (data_trans.account === public_key) {
+                            balance_info.balance -= data_trans.params.amount;
+                        } else {
+                            balance_info.balance += data_trans.params.amount;
+                        }
                     }
                 });
+
+                balance_info.bandwidth = balance_info.balance / MAX_CELLULOSE * NETWORK_BANDWIDTH;
 
                 res.status(200);
                 data_return.status = 200;
                 data_return.msg = 'OK';
-                data_return.data = {
-                    sequence: sequence
-                }
-
+                data_return.data = balance_info;
             } catch (err) {
                 res.status(500);
             }
