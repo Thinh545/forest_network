@@ -8,6 +8,7 @@ const cors = require('cors')
 require('dotenv').config()
 
 // Configs
+const db = require('./lib/db')
 const {
     mongoURI
 } = require('./configs/db');
@@ -17,7 +18,7 @@ const accountRouter = require('./routes/account');
 
 const app = express();
 
-app.use(cors({credentials: true, origin: true}));
+app.use(cors({ credentials: true, origin: true }));
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -25,17 +26,11 @@ app.use(cookieParser());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
-mongoose
-    .connect(mongoURI, { useNewUrlParser: true })
-    .then(() => {
-        console.log("Connected to DB");
-    })
-    .catch(err => {
-        console.log("Failed to connect DB !");
-        console.log("Error: ", err);
-    });
-
 app.use('/account', accountRouter);
+
+db.sync().then(async () => {
+    console.log('Database schema synced!');
+}).catch(console.error);
 
 var server = app.listen(process.env.PORT || 5000, function () {
     var port = server.address().port;

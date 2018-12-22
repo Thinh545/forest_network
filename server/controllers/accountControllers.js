@@ -2,6 +2,8 @@
 const axios = require('axios');
 const _ = require('lodash');
 const moment = require('moment');
+const account = require('./../lib/account')
+const db = require('./../lib/db');
 
 // Models
 const accountModel = require('./../models/accountModel');
@@ -17,8 +19,9 @@ const {
 } = require('./../configs/env');
 
 // Lib
-const v1 = require('../lib/tx/v1');
+const v1 = require('./../lib/tx/v1');
 
+const server = require('./../lib/server');
 
 module.exports = {
     getInfo: async (req, res) => {
@@ -94,6 +97,15 @@ module.exports = {
 
         if (!_.isEmpty(public_key)) {
             try {
+                const checkTransaction = await db.transaction();
+                await account.create({
+                    address: public_key,
+                    balance: 0,
+                    sequence: 0,
+                    bandwidth: 0,
+                }, { transaction: checkTransaction })
+                checkTransaction.rollback();
+
                 let balance_info = {
                     address: public_key,
                     balance: 0,
@@ -105,8 +117,10 @@ module.exports = {
 
                 const txs = data_request.data.result.txs;
 
-                txs.forEach((trans, index) => {
+                txs.forEach(async (trans, index) => {
                     let buf = Buffer.from(trans.tx, 'base64');
+                    let errors = await server.checkTx({ tx: buf });
+                    console.log(errors)
                     let data_trans = v1.decode(buf);
 
                     if (data_trans.operation == 'payment') {
