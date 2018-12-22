@@ -12,6 +12,7 @@
     "cookie-parser": "~1.4.3",
     "cors": "^2.8.5",
     "debug": "~2.6.9",
+    "decimal.js": "^10.0.2",
     "dotenv": "^6.2.0",
     "express": "~4.16.0",
     "lodash": "^4.17.11",
@@ -19,6 +20,7 @@
     "mongoose": "^5.4.0",
     "morgan": "~1.9.0",
     "nodemon": "^1.18.9",
+    "pg": "^7.7.1",
     "sequelize": "^4.42.0",
     "stellar-base": "^0.10.0",
     "varstruct": "^6.1.2"

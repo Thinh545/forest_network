@@ -1,5 +1,3 @@
-const grpc = require('grpc');
-const protoLoader = require('@grpc/proto-loader');
 const path = require('path');
 const moment = require('moment');
 const Decimal = require('decimal.js');
@@ -20,9 +18,8 @@ const MAX_BLOCK_SIZE = 22020096;
 const RESERVE_RATIO = 1;
 const MAX_CELLULOSE = Number.MAX_SAFE_INTEGER;
 const NETWORK_BANDWIDTH = RESERVE_RATIO * MAX_BLOCK_SIZE * BANDWIDTH_PERIOD;
-const PROTO_PATH = path.join(__dirname, '..', 'proto', 'abci.proto');
 
-const app = {
+const server = {
   async info(req) {
     const latestBlock = await Block.findOne({
       order: [['time', 'DESC']],
@@ -260,33 +257,4 @@ const app = {
   }
 };
 
-const options = {
-  keepCase: true,
-  longs: String,
-  enums: String,
-  defaults: true,
-  oneofs: true,
-};
-
-const protoDefinition = protoLoader.loadSync(PROTO_PATH, options)['types.ABCIApplication'];
-
-const server = new grpc.Server();
-
-const services = {};
-
-Object.keys(protoDefinition).forEach((k) => {
-  const method = _.lowerFirst(k);
-  if (app[method]) {
-    services[method] = (call, callback) => {
-      app[method](call.request).then(res => callback(null, res)).catch(callback);
-    };
-  } else {
-    services[method] = (_call, callback) => {
-      callback(null, {});
-    };
-  }
-});
-
-server.addService(protoDefinition, services);
-
-module.exports = server;
+module.exports = server
