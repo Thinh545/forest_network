@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { Layout, Icon, Input, Row } from 'antd';
 import axios from 'axios';
 import { updateBlockchainData } from '../../redux/actions/RightSide';
-import { API } from '../../configs/index';
+import { API_ACCOUNT } from '../../configs/index';
 import './blockchain.css';
 
 const { Content } = Layout;
@@ -18,25 +18,25 @@ class UserBlockchainInfo extends Component {
             <Content style={styles.wrapper}>
                 <Content style={styles.item}>
                 <Icon type="dollar" style={{ marginRight: 10, color: 'orange' }}/>
-                    <text className = 'amount'>
-                        {' '}{this.props.data && this.props.data.data.amount} 
-                    </text>
-                    <text className = 'unit'> TRE</text>
+                    <label className = 'amount'>
+                        {' '}{this.props.data && this.props.data.data.balance} 
+                    </label>
+                    <label className = 'unit'> TRE</label>
                 </Content>
                 <Content style={styles.item}>
                 <Icon type="dot-chart" style={{ marginRight: 10, color: 'blue' }}/>
-                    <text className = 'amount'>
-                        {' '}{this.props.data && this.props.data.data.bandwidth}
-                    </text>
-                    <text className = 'unit'> OXY</text>
+                    <label className = 'amount'>
+                        {' '}{Math.round(this.props.data && this.props.data.data.bandwidth)}
+                    </label>
+                    <label className = 'unit'> OXY</label>
                 </Content>
-                <Content style={styles.item}>
+                {/* <Content style={styles.item}>
                 <Icon type="dash" style={{ marginRight: 10 }}/>
-                    <text className = 'amount'>
+                    <label className = 'amount'>
                         {' '}{this.props.data && this.props.data.data.sequence}
-                    </text>
-                    <text className = 'unit'> SEQUENCE</text>
-                </Content>
+                    </label>
+                    <label className = 'unit'> SEQUENCE</label>
+                </Content> */}
             </Content>
         );
     }
@@ -61,7 +61,7 @@ const mapStateToProps = (state) => ({
 
 const mapDispatchToProps = (dispatch) => ({
     getBlockchainInfo: async () => {
-        const url = API + 'account/GDQVHLWFQW3M6H23J2IMRMBK4MHZ5ZF56LJWN7WNXPAMRTL5MQPVCPKL/info?fbclid=IwAR2r4LlqsS_07njc8ZGfgdBlGwriuH0gExN7v2g_NwecdJqKjgO7npOdkBg';
+        const url = API_ACCOUNT + 'balance?public_key=GDQVHLWFQW3M6H23J2IMRMBK4MHZ5ZF56LJWN7WNXPAMRTL5MQPVCPKL';
         
         const res = await axios({
             url,

@@ -1,1 +1,2 @@
-export const API = 'https://hoami-forest-network.herokuapp.com/';
+export const HOST = 'http://localhost:3000/';
+export const API_ACCOUNT = HOST + 'account/';

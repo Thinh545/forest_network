@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { Dropdown, Menu, Avatar } from 'antd';
+import { Link } from 'react-router-dom';
 
 const MenuItemGroup = Menu.ItemGroup;
 
@@ -31,7 +32,9 @@ class Profile extends Component {
                     </Menu.Item>
 
                     <Menu.Item key="logout">
-                        Logout
+                        <Link to = '/login'>
+                            Logout
+                        </Link>
                     </Menu.Item>
                 </Menu>
             )
