@@ -7,15 +7,16 @@ const logger = require('morgan');
 const cors = require('cors')
 require('dotenv').config()
 
-// Configs
+// // Configs
+const tx_method = require('./lib/tx_method')
 const db = require('./lib/db')
-const {
-    mongoURI
-} = require('./configs/db');
+const Account = require('./lib/account')
+// const {
+//     mongoURI
+// } = require('./configs/db');
 
 // Routes
 const accountRouter = require('./routes/account');
-
 const app = express();
 
 app.use(cors({ credentials: true, origin: true }));
@@ -28,13 +29,29 @@ app.use(bodyParser.json());
 
 app.use('/account', accountRouter);
 
-// db.sync().then(async () => {
-//     console.log('Database schema synced!');
-// }).catch(console.error);
 
-var server = app.listen(process.env.PORT || 5000, function () {
-    var port = server.address().port;
-    console.log("Express is working on port " + port);
-});
+let server;
+
+db.sync().then(async () => {
+    console.log('Database schema synced!');
+
+    // Try to init genesis account
+    const count = await Account.count();
+    if (count === 0) {
+        await Account.create({
+            address: 'GA6IW2JOWMP4WGI6LYAZ76ZPMFQSJAX4YLJLOQOWFC5VF5C6IGNV2IW7',
+            balance: Number.MAX_SAFE_INTEGER,
+            sequence: 0,
+            bandwidth: 0,
+        });
+    }
+
+    await tx_method.blockSync()
+
+    server = app.listen(process.env.PORT || 5000, function () {
+        var port = server.address().port;
+        console.log("Express is working on port " + port);
+    });
+}).catch(console.error);
 
 module.exports = app;

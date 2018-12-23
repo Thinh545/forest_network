@@ -1,4 +1,3 @@
-const path = require('path');
 const moment = require('moment');
 const Decimal = require('decimal.js');
 const crypto = require('crypto');
@@ -19,8 +18,12 @@ const RESERVE_RATIO = 1;
 const MAX_CELLULOSE = Number.MAX_SAFE_INTEGER;
 const NETWORK_BANDWIDTH = RESERVE_RATIO * MAX_BLOCK_SIZE * BANDWIDTH_PERIOD;
 
-const server = {
-  async info(req) {
+// Sync DB
+const { RpcClient } = require('tendermint')
+const Client = RpcClient('wss://komodo.forest.network:443')
+
+const tx_method = {
+  async info() {
     const latestBlock = await Block.findOne({
       order: [['time', 'DESC']],
     });
@@ -183,8 +186,8 @@ const server = {
       hash: tx.hash,
       author: account.address,
     }, {
-      transaction: dbTransaction,
-    });
+        transaction: dbTransaction,
+      });
 
     if (tx.account) {
       tags.push({ key: ACCOUNT_KEY, value: Buffer.from(tx.account) });
@@ -218,15 +221,8 @@ const server = {
       transaction: this.blockTransaction,
     });
     try {
-      const tx = await this.executeTx(req, deliverTransaction);
+      await this.executeTx(req, deliverTransaction);
       await deliverTransaction.commit();
-      // Update app hash
-      this.appHash = crypto.createHash('sha256')
-        .update(Buffer.concat([this.appHash, Buffer.from(tx.hash, 'hex')]))
-        .digest();
-      return {
-        tags: tx.tags,
-      };
     } catch (err) {
       await deliverTransaction.rollback();
       return { code: 1, log: err.toString() };
@@ -254,7 +250,44 @@ const server = {
     } catch (err) {
       return { code: 1, log: err.toString() };
     }
+  },
+
+  async blockSync() {
+    let info = await this.info();
+    console.log(info)
+    let next_height = parseInt(info.last_block_height) + 1;
+
+    const deliverTransaction = await db.transaction({
+      transaction: this.blockTransaction,
+    });
+    while (true) {
+      try {
+        console.log(next_height);
+        const block = await Client.block({ height: next_height });
+        const txs = block.block.data.txs;
+        if (txs) {
+          txs.forEach(async (tx) => {
+            const buf = Buffer.from(tx, 'base64');
+            let result = await this.deliverTx({ tx: buf });
+            console.log(result);
+          });
+        }
+
+        const meta = block.block_meta;
+        this.currentBlock = {
+          height: meta.header.height,
+          hash: meta.block_id.hash,
+          time: meta.header.time,
+          appHash: meta.header.app_hash,
+        }
+        await Block.create(this.currentBlock);
+        next_height++;
+      } catch (err) {
+        console.log(err);
+        return;
+      }
+    }
   }
 };
 
-module.exports = server
+module.exports = tx_method
