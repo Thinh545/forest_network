@@ -12,7 +12,8 @@ const accountModel = require('./../models/accountModel');
 
 // Configs
 const {
-    searchTransactions
+    searchTransactionsURL,
+    broadcastTxCommitURL
 } = require('../configs/api');
 
 const {
@@ -33,6 +34,7 @@ module.exports = {
     getInfo: async (req, res) => {
         const public_key = req.query.public_key;
 
+        console.log(public_key);
         let data_return = {
             status: 500,
             msg: 'Unexpected Error',
@@ -49,7 +51,7 @@ module.exports = {
                     bandwidthTime: null,
                 }
 
-                const url = searchTransactions + '\'' + public_key + '\'"';
+                const url = searchTransactionsURL + '\'' + public_key + '\'"';
                 const data_request = await axios.default.get(url);
 
                 const txs = data_request.data.result.txs;
@@ -101,22 +103,13 @@ module.exports = {
 
         if (!_.isEmpty(public_key)) {
             try {
-                const checkTransaction = await db.transaction();
-                await account.create({
-                    address: public_key,
-                    balance: 0,
-                    sequence: 0,
-                    bandwidth: 0,
-                }, { transaction: checkTransaction })
-                checkTransaction.rollback();
-
                 let balance_info = {
                     address: public_key,
                     balance: 0,
                     bandwidth: 0,
                 }
 
-                const url = searchTransactions + '\'' + public_key + '\'"';
+                const url = searchTransactionsURL + '\'' + public_key + '\'"';
                 const data_request = await axios.default.get(url);
 
                 const txs = data_request.data.result.txs;
@@ -155,6 +148,7 @@ module.exports = {
         res.json(data_return);
     },
 
+
     // createAccount: (req, res) => {
     //     // const tx = req.body.tx;
     //     // console.log(tx);
@@ -183,9 +177,23 @@ module.exports = {
     //     res.send(data);
     // },
 
-    getCreateParams: (req, res) => {
+    getCreateParams: async (req, res) => {
         const account = req.query.account;
-        const public_key = req.query.public_key;
+        const address = req.query.address;
+
+        const url = searchTransactionsURL + '\'' + account + '\'"';
+        const data_request = await axios.default.get(url);
+
+        const txs = data_request.data.result.txs;
+        let sequence = 0;
+        txs.forEach(async (trans, index) => {
+            let buf = Buffer.from(trans.tx, 'base64');
+            let data_trans = v1.decode(buf);
+
+            if (data_trans.account == account) {
+                sequence++
+            }
+        });
 
         let data_return = {
             status: 500,
@@ -197,19 +205,19 @@ module.exports = {
             res.status(400)
             data_return.status = 400;
             data_return.msg = 'Invalid <account> string !'
-        } else if(_.isEmpty(public_key) || !_.isString(public_key)) {
+        } else if(_.isEmpty(address) || !_.isString(address)) {
             res.status(400)
             data_return.status = 400;
-            data_return.msg = 'Invalid <public_key> string !'
+            data_return.msg = 'Invalid <address> string !'
         } else {
             const tx = {
                 version: 1,
                 account : account,
-                sequence: 1,
-                memo: Buffer.from('Create account'),
+                sequence: sequence,
+                memo: Buffer.from('Create account').toString('base64'),
                 operation: 'create_account',
                 params: {
-                    address: public_key
+                    address: address
                 },
             }
 
@@ -223,8 +231,32 @@ module.exports = {
     },
 
     postCreateCommit: async (req, res) => {
-        const tx = req.body.tx;
-        res.send(tx);
+        let tx = req.body.tx;
+
+        let data_return = {
+            status: 500,
+            msg: 'Unexpected Error',
+        }
+        res.status(500);
+
+        if (_.isEmpty(tx)) {
+            res.status(400)
+            data_return.status = 400;
+            data_return.msg = 'tx is empty !'
+        } else {
+            tx.memo = Buffer.from(tx.memo, 'base64');
+            tx.signature = Buffer.from(tx.signature, 'base64');
+
+            const txData = '0x' + transaction.encode(tx).toString('hex');
+            const url = broadcastTxCommitURL + txData;
+            const commit_create_account = await axios.default.get(broadcastTxCommitURL)
+
+            res.status(200);
+            data_return.status = 200;
+            data_return.msg = 'OK !';
+        }
+
+        res.json(data_return);
     },
 
     getPaymenParams: (req, res) => {

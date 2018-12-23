@@ -1,7 +1,7 @@
-const vstruct = require('varstruct');
-const crypto = require('crypto');
-const { Keypair } = require('stellar-base');
-const v1 = require('./v1');
+import * as vstruct from 'varstruct';
+import crypto from 'crypto';
+import { Keypair } from 'stellar-base';
+import * as v1 from './v1';
 
 const Transaction = vstruct([
   { name: 'version', type: vstruct.UInt8 },
@@ -41,9 +41,7 @@ export const getUnsignedHash = (tx) => {
 export const sign = (tx, secret) => {
   const key = Keypair.fromSecret(secret);
   tx.account = key.publicKey();
-  console.log("account " + tx.account);
   tx.signature = key.sign(getUnsignedHash(tx));
-  console.log("signature " + tx.signature);
 }
 
 export const verify = (tx) => {

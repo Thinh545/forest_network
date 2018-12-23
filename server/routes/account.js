@@ -2,6 +2,7 @@ const express = require('express');
 const {
   getInfo,
   getBalance,
+  getSequence,
   getCreateParams,
   postCreateCommit
 } = require('../controllers/accountControllers');
