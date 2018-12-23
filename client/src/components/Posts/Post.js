@@ -1,9 +1,10 @@
 import React, { Component } from 'react'
-import { Row, Col, Avatar, Card, Icon } from 'antd';
+import { Row, Col, Avatar, Card, Icon, Layout } from 'antd';
 
 // Component: 
 import PostDetail from './PostDetail';
 import PostButton from './PostButton';
+import Reaction from './Reaction';
 
 const { Meta } = Card;
 
@@ -70,37 +71,36 @@ export default class Post extends Component {
                         </Col>
                         <Col span={2}></Col>
                     </Row>
-
-                    <br></br>
-                    <Row>
-                        <Col span={2}></Col>
-                        <Col span={20}>
-                            <Row>
-                                <Col span={3}>
-                                    <PostButton type="heart" />
-                                </Col>
-                                <Col span={3}>
-                                    <PostButton type="message" />
-                                </Col>
-
-                                <Col span={3}>
-                                    <PostButton type="share-alt" />
-                                </Col>
-                            </Row>
-                        </Col>
-                        <Col span={2}></Col>
-                    </Row>
-
-                    <Row>
-                        <Col span={2}></Col>
-                        <Col span={20}>
-                            <br />
-                            <hr />
-                            <br />
-                        </Col>
-                        <Col span={2}></Col>
-                    </Row>
                 </div>
+                <br></br>
+                <Row>
+                    <Col span={2}></Col>
+                    <Col span={20}>
+                        <Row>
+                            <Col span={1}>
+                                <Reaction/>
+                            </Col>
+                            <Col span={3} style = {{marginLeft: window.innerWidth * 0.03}}>
+                                <PostButton type="message" />
+                            </Col>
+
+                            <Col span={3}>
+                                <PostButton type="share-alt" />
+                            </Col>
+                        </Row>
+                    </Col>
+                    <Col span={2}></Col>
+                </Row>
+
+                <Row>
+                    <Col span={2}></Col>
+                    <Col span={20}>
+                        <br />
+                        <hr />
+                        <br />
+                    </Col>
+                    <Col span={2}></Col>
+                </Row>
                 <PostDetail
                     visible={this.state.visible}
                     handleOk={this.handleOk}

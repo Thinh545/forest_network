@@ -4,6 +4,7 @@ import { Modal, Row, Col, Avatar, Card, Icon, Input, Button } from 'antd';
 // Component:
 import Comments from './Comments/index';
 import PostButton from './PostButton';
+import Reactions from './Reaction';
 const { Meta } = Card;
 
 export default class PostDetail extends Component {
@@ -61,8 +62,10 @@ export default class PostDetail extends Component {
                     <Col span={3}></Col>
                     <Col span={20}>
                         <Row>
-                            <Col span={3}><PostButton type="heart" /></Col>
-                            <Col span={3}><PostButton type="message" /></Col>
+                            <Col span = {1}>
+                                <Reactions/>
+                            </Col>
+                            <Col span={3} style = {{marginLeft: window.innerWidth * 0.03}}><PostButton type="message" /></Col>
                             <Col span={3}><PostButton type="share-alt" /></Col>
                         </Row>
                     </Col>
