@@ -30,28 +30,28 @@ app.use(bodyParser.json());
 app.use('/account', accountRouter);
 
 
-let server;
+// let server;
 
-db.sync().then(async () => {
-    console.log('Database schema synced!');
+// db.sync().then(async () => {
+//     console.log('Database schema synced!');
 
-    // Try to init genesis account
-    const count = await Account.count();
-    if (count === 0) {
-        await Account.create({
-            address: 'GA6IW2JOWMP4WGI6LYAZ76ZPMFQSJAX4YLJLOQOWFC5VF5C6IGNV2IW7',
-            balance: Number.MAX_SAFE_INTEGER,
-            sequence: 0,
-            bandwidth: 0,
-        });
-    }
+//     // Try to init genesis account
+//     const count = await Account.count();
+//     if (count === 0) {
+//         await Account.create({
+//             address: 'GA6IW2JOWMP4WGI6LYAZ76ZPMFQSJAX4YLJLOQOWFC5VF5C6IGNV2IW7',
+//             balance: Number.MAX_SAFE_INTEGER,
+//             sequence: 0,
+//             bandwidth: 0,
+//         });
+//     }
 
-    await tx_method.blockSync()
+//     await tx_method.blockSync()
 
-    server = app.listen(process.env.PORT || 5000, function () {
-        var port = server.address().port;
-        console.log("Express is working on port " + port);
-    });
-}).catch(console.error);
+//     server = app.listen(process.env.PORT || 5000, function () {
+//         var port = server.address().port;
+//         console.log("Express is working on port " + port);
+//     });
+// }).catch(console.error);
 
 module.exports = app;
