@@ -6,7 +6,11 @@ import './style.css';
 import { Link } from 'react-router-dom';
 import  {API_ACCOUNT} from '../../configs/index';
 import axios from 'axios';
-import * as StellarSdk from 'stellar-sdk';
+import querystring from 'querystring';
+import {
+    Keypair
+} from 'stellar-base';
+
 import { sign } from './../../helpers/tx/index'
 
 class Login extends Component{
@@ -172,29 +176,27 @@ const styles = {
 
 const mapStateToProps = () => ({
     _handleSignUp: async (secret, address) => {
-        const keypair = StellarSdk.Keypair.fromSecret(secret);
-        const account = keypair.publicKey(); 
+        const keypair = Keypair.fromSecret(secret);
+        const account = keypair.publicKey();
 
-        const url = API_ACCOUNT + 'create_params?account=' + account + '&public_key=' + address;
+        const get_url = API_ACCOUNT + 'create_params?account=' + account + '&address=' + address;
 
-        let getTx = await axios({
-            url,
-            method: 'GET'
-        });
+        const getTx = await axios.get(get_url);
 
-        let tx = getTx.data.data;     
-        // console.log(getTx.data.data);
-        // console.log(tx);
+        let tx = getTx.data.data;
+        tx.memo = Buffer.from(tx.memo, 'base64');
 
-        // console.log(typeof secret);
-        sign(tx , secret );
-        // console.log(tx);
-        // const post_url = API_ACCOUNT + 'create_commit';
-        // const postTx = await axios({
-        //     url: post_url,
-        //     method: 'POST',
-        //     data: tx
-        // });
+        sign(tx , secret);
+
+        tx.memo = tx.memo.toString('base64');
+        tx.signature = tx.signature.toString('base64');
+
+        const post_url = API_ACCOUNT + 'create_commit';
+
+        const postTx = await axios.post(
+            post_url,
+            { tx: tx },
+        );
     }
 });
 
