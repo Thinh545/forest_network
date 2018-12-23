@@ -44,7 +44,7 @@ const InteractParams = vstruct([
   // React if '', like, love, haha, anrgy, sad, wow
 ]);
 
-function encode(tx) {
+export const encode = (tx) => {
   let params, operation;
   if (tx.version !== 1) {
     throw Error('Wrong version');
@@ -99,7 +99,7 @@ function encode(tx) {
   });
 }
 
-function decode(data) {
+export const decode = (data) => {
   const tx = Transaction.decode(data);
   if (tx.version !== 1) {
     throw Error('Wrong version');
@@ -149,8 +149,3 @@ function decode(data) {
     signature: tx.signature,
   };
 }
-
-module.exports = {
-  encode,
-  decode,
-};
