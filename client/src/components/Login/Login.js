@@ -197,6 +197,14 @@ const mapStateToProps = () => ({
             post_url,
             { tx: tx },
         );
+
+        console.log(postTx.data);
+        if(postTx.data.status == 200){
+            alert('Bạn đã tạo thành công tài khoản ' + address );
+        }
+        else{
+            alert('Tạo tài khoản thất bại');
+        }
     }
 });
 
