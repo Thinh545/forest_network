@@ -28,9 +28,9 @@ app.use(bodyParser.json());
 
 app.use('/account', accountRouter);
 
-db.sync().then(async () => {
-    console.log('Database schema synced!');
-}).catch(console.error);
+// db.sync().then(async () => {
+//     console.log('Database schema synced!');
+// }).catch(console.error);
 
 var server = app.listen(process.env.PORT || 5000, function () {
     var port = server.address().port;

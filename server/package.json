@@ -23,6 +23,7 @@
     "pg": "^7.7.1",
     "sequelize": "^4.42.0",
     "stellar-base": "^0.10.0",
+    "stellar-sdk": "^0.11.0",
     "varstruct": "^6.1.2"
   }
 }
