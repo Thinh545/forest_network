@@ -6,7 +6,12 @@ const db = require('./db');
 const Block = require('./block');
 const Account = require('./account');
 const Transaction = require('./transaction');
+const Info = require('./info')
+const Post = require('./post')
+const Interact = require('./interact')
+
 const { decode, verify, hash } = require('./tx');
+const v1 = require('./tx/v1')
 
 // 24 hours
 const BANDWIDTH_PERIOD = 86400;
@@ -23,7 +28,7 @@ const { RpcClient } = require('tendermint')
 const Client = RpcClient('wss://komodo.forest.network:443')
 
 const tx_method = {
-  async info() {
+  async blockInfo() {
     const latestBlock = await Block.findOne({
       order: [['time', 'DESC']],
     });
@@ -134,6 +139,11 @@ const tx_method = {
         sequence: 0,
         bandwidth: 0,
       }, { transaction: dbTransaction });
+
+      await Info.create({
+        address
+      }, { transaction: dbTransaction })
+
       console.log(`${tx.hash}: ${account.address} created ${address}`);
     } else if (operation === 'payment') {
       const { address, amount } = tx.params;
@@ -157,9 +167,30 @@ const tx_method = {
       console.log(`${tx.hash}: ${account.address} transfered ${amount} to ${address}`);
     } else if (operation === 'post') {
       const { content, keys } = tx.params;
+      await Post.create({
+        hash: tx.hash,
+        content,
+        keys
+      }, { transaction: dbTransaction })
       console.log(`${tx.hash}: ${account.address} posted ${content.length} bytes with ${keys.length} keys`);
     } else if (operation === 'update_account') {
       const { key, value } = tx.params;
+      const found = await Info.findByPk(account.address);
+      if (!found) {
+        throw Error('Account does not exists');
+      }
+      switch (key) {
+        case 'name':
+          info.name = value.toString('utf-8');
+          break;
+        case 'picture':
+          info.picture = value;
+          break;
+        case 'following':
+          info.followings = v1.followingsDecode(value);
+          break;
+      }
+      await info.save();
       console.log(`${tx.hash}: ${account.address} update ${key} with ${value.length} bytes`);
     } else if (operation === 'interact') {
       const { object, content } = tx.params;
@@ -168,6 +199,10 @@ const tx_method = {
       if (!transaction) {
         throw Error('Object does not exist');
       }
+      await Interact.create({
+        hash: object,
+        content
+      })
       tx.params.address = transaction.author;
       console.log(`${tx.hash}: ${account.address} interact ${object} with ${content.length} bytes`);
     } else {
@@ -253,13 +288,12 @@ const tx_method = {
   },
 
   async blockSync() {
-    let info = await this.info();
+    let info = await this.blockInfo();
     console.log(info)
+    if (info.last_block_height == 0)
+      this.currentBlock = null;
     let next_height = parseInt(info.last_block_height) + 1;
 
-    const deliverTransaction = await db.transaction({
-      transaction: this.blockTransaction,
-    });
     while (true) {
       try {
         console.log(next_height);
@@ -269,7 +303,8 @@ const tx_method = {
           txs.forEach(async (tx) => {
             const buf = Buffer.from(tx, 'base64');
             let result = await this.deliverTx({ tx: buf });
-            console.log(result);
+            if (result)
+              console.log(result);
           });
         }
 
@@ -280,10 +315,12 @@ const tx_method = {
           time: meta.header.time,
           appHash: meta.header.app_hash,
         }
+
         await Block.create(this.currentBlock);
         next_height++;
       } catch (err) {
         console.log(err);
+        setTimeout(this.blockSync(), 60000);
         return;
       }
     }

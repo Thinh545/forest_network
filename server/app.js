@@ -28,8 +28,12 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 app.use('/account', accountRouter);
-
 let server;
+
+const axios = require('axios')
+const v1 = require('./lib/tx/v1')
+const Post = require('./lib/post')
+const Info = require('./lib/info')
 
 db.sync().then(async () => {
     console.log('Database schema synced!');

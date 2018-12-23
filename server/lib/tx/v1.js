@@ -44,6 +44,23 @@ const InteractParams = vstruct([
   // React if '', like, love, haha, anrgy, sad, wow
 ]);
 
+const PlainTextContent = vstruct([
+  { name: 'type', type: vstruct.UInt8 },
+  { name: 'text', type: vstruct.VarString(vstruct.UInt16BE) },
+]);
+
+const Followings = vstruct([
+  { name: 'addresses', type: vstruct.VarArray(vstruct.UInt16BE, vstruct.Buffer(35)) },
+]);
+
+function contentDecode(data) {
+  return PlainTextContent.decode(data);
+}
+
+function followingsDecode(data) {
+  return Followings.decode(data);
+}
+
 function encode(tx) {
   let params, operation;
   if (tx.version !== 1) {
@@ -119,7 +136,7 @@ function decode(data) {
       params.address = base32.encode(params.address);
       Keypair.fromPublicKey(params.address);
       break;
-    
+
     case 3:
       operation = 'post';
       params = PostParams.decode(tx.params);
@@ -129,13 +146,13 @@ function decode(data) {
       operation = 'update_account';
       params = UpdateAccountParams.decode(tx.params);
       break;
-    
+
     case 5:
       operation = 'interact';
       params = InteractParams.decode(tx.params);
       params.object = params.object.toString('hex').toUpperCase();
       break;
-    
+
     default:
       throw Error('Unspport operation');
   }
@@ -153,4 +170,6 @@ function decode(data) {
 module.exports = {
   encode,
   decode,
+  contentDecode,
+  followingsDecode,
 };
