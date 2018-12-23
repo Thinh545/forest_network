@@ -47,7 +47,7 @@ class Login extends Component{
                        
                     </Layout>
                     <Layout style = {styles.rightWrapper}>
-                        <img src = {require('../../images/bird.png')} className = 'logo'/>
+                        <img src = '/bird.png' className = 'logo'/>
                         <label className = 'title'>
                             See what’s happening in the world right now
                         </label>
