@@ -7,7 +7,7 @@ const Transaction = vstruct([
   { name: 'version', type: vstruct.UInt8 },
 ]);
 
-function encode(tx) {
+export const encode = (tx) => {
   switch (tx.version) {
     case 1:
       return v1.encode(tx);
@@ -17,7 +17,7 @@ function encode(tx) {
   };
 }
 
-function decode(data) {
+export const decode = (data) => {
   const versionTx = Transaction.decode(data);
   switch (versionTx.version) {
     case 1:
@@ -28,7 +28,7 @@ function decode(data) {
   }
 }
 
-function getUnsignedHash(tx) {
+export const getUnsignedHash = (tx) => {
   return crypto
     .createHash('sha256')
     .update(encode({
@@ -38,23 +38,23 @@ function getUnsignedHash(tx) {
     .digest();
 }
 
-function sign(tx, secret) {
+export const sign = (tx, secret) => {
   const key = Keypair.fromSecret(secret);
   tx.account = key.publicKey();
+  console.log("account " + tx.account);
   tx.signature = key.sign(getUnsignedHash(tx));
+  console.log("signature " + tx.signature);
 }
 
-function verify(tx) {
+export const verify = (tx) => {
   const key = Keypair.fromPublicKey(tx.account);
   return key.verify(getUnsignedHash(tx), tx.signature);
 }
 
-function hash(tx) {
+export const hash = (tx) => {
   return tx.hash = crypto.createHash('sha256')
     .update(encode(tx))
     .digest()
     .toString('hex')
     .toUpperCase();
 }
-
-module.exports = { encode, decode, verify, sign, hash };

@@ -1,0 +1,27 @@
+.left-text{
+    color: white;
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.left-item{
+    margin-left: 25%;
+    margin-bottom: 40px;
+}
+
+.logo{
+    width: 40px;
+    height: 40px;
+    background-color: white;
+    margin-top: 10%;
+    margin-left: 20%;
+}
+
+.title {
+    margin-left: 20%;
+    margin-right: 20%;
+    margin-bottom: 10%;
+    font-size: 30px;
+    font-weight: bold;
+    color: black;
+}
