@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { Layout, Menu, Icon, Button, Avatar, Row, Badge, Affix, Col } from 'antd';
+import { Layout, Menu, Icon, Button, Avatar, Row, Badge, Affix, Col, Modal, Input } from 'antd';
 import SearchBar from './Search'
 import Profile from './Profile'
 import { switchEditMode } from '../../redux/actions/LeftSide';
@@ -21,6 +21,8 @@ class Header extends Component {
             website: null,
             pressSave: false,
             isAffixChange: false,
+            tweetModalVisible: false,
+            content: ''
         }
     }
 
@@ -93,7 +95,13 @@ class Header extends Component {
                         </Menu.Item>
 
                         <Menu.Item key="tweet" style={{ float: 'right' }}>
-                            <Button type="primary" icon="form">Tweet</Button>
+                            <Button 
+                                type="primary" 
+                                icon="form"
+                                onClick = {() => {
+                                    this.setState({tweetModalVisible: true});
+                                }}
+                            >Tweet</Button>
                         </Menu.Item>
 
                         <Menu.Item key="profile" style={{ float: 'right' }}>
@@ -170,71 +178,68 @@ class Header extends Component {
                                 }}
                             >Save</Button>}
                         </Col>
-
+                        
                     </Row>
-
-
-                    {/* <Menu mode="horizontal" style={{ lineHeight: '50px' }} selectable={false}>                             */}
-
-                    {/* <Menu.Item key="posts">
-                                Posts: <strong>0</strong>
-                            </Menu.Item>
-
-                            <Menu.Item key="following">
-                                Following: <strong>{this.props.following}</strong>
-                            </Menu.Item>
-
-                            <Menu.Item key="followers">
-                                Followers: <strong>{this.props.followers}</strong>
-                            </Menu.Item>
-
-                            <Menu.Item key="edit" style={{ float: 'right' }}>
-                                {!this.props.enableEdit && <Button
-                                    type='danger'
-                                    ghost
-                                    onClick={() => {
-                                        this.props.switchEditMode(true);
-                                    }}
-                                >Edit</Button>}
-                                {this.props.enableEdit && <Button
-                                    type='danger'
-                                    ghost
-                                    onClick={() => {
-                                        this.props.switchEditMode(false);
-                                        this.props.updateInformation(
-                                            this.state.username,
-                                            this.state.description,
-                                            this.state.location,
-                                            this.state.website
-                                        )
-                                    }}
-                                    style={{ marginRight: '5%' }}
-                                >Cancel</Button>}
-                                {this.props.enableEdit && <Button
-                                    type='danger'
-                                    ghost
-                                    onClick={() => {
-                                        this.props.switchEditMode(false);
-                                        this.props.updateInformation(
-                                            this.props.username,
-                                            this.props.description,
-                                            this.props.location,
-                                            this.props.website
-                                        );
-                                        this.setState({
-                                            username: this.props.username,
-                                            description: this.props.description,
-                                            location: this.props.location,
-                                            website: this.props.website,
-                                            pressSave: true
-                                        });
-                                    }}
-                                >Save</Button>}
-                            </Menu.Item> */}
-                    {/* </Menu> */}
                 </Affix>
+                <Modal
+                    visible = {this.state.tweetModalVisible}
+                    onCancel = {() => {this.setState({tweetModalVisible: false})}}
+                    footer = {null}
+                    title = {'Tạo nội dung post'}
+                    bodyStyle = {styles.modalBody}
+                >
+                    <Input
+                        placeholder = 'Có chuyện gì vậy ?'
+                        style = {styles.inputTweet}
+                        autoFocus = {true}
+                        onChange = {(e) => {
+                            this.setState({content: e.target.value});
+                        }}
+                    />
+                    <Layout
+                        style = {styles.buttonTweetWrapper}
+                    >
+                        <Button
+                            style = {
+                                {
+                                    width: '20%',
+                                    borderRadius: 100,
+                                    color: 'white',
+                                    fontWeight: '500',
+                                    backgroundColor: this.state.content == '' ? '#6DA5FF' : '#3D83F4'
+                                }
+                            }
+                            onClick = {() => {
+                                if(this.state.content != ''){
+                                    
+                                }
+                            }}
+                        >
+                            Đăng bài
+                        </Button>
+                    </Layout>
+                </Modal>
             </Layout>
         )
+    }
+}
+
+const styles = {
+    modalBody: {
+        backgroundColor: '#E5EFFF', 
+        borderBottomRightRadius: 10, 
+        borderBottomLeftRadius: 10,
+    },
+    inputTweet: {
+        height: window.innerHeight * 0.12,
+        borderRadius: 8,
+        borderColor: '#90B9F9'
+    },
+    buttonTweetWrapper:{
+        marginTop: window.innerHeight * 0.02,
+        justifyContent: 'center',
+        alignItems: 'flex-end',
+        backgroundColor: '#E5EFFF'
     }
 }
 

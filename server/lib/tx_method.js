@@ -319,7 +319,6 @@ const tx_method = {
         await Block.create(this.currentBlock);
         next_height++;
       } catch (err) {
-        console.log(err);
         setTimeout(this.blockSync(), 60000);
         return;
       }
