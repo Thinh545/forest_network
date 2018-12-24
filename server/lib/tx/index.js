@@ -7,6 +7,19 @@ const Transaction = vstruct([
   { name: 'version', type: vstruct.UInt8 },
 ]);
 
+const PlainTextContent = vstruct([
+  { name: 'type', type: vstruct.UInt8 },
+  { name: 'text', type: vstruct.VarString(vstruct.UInt16BE) },
+]);
+
+function contentDecode(data) {
+  return PlainTextContent.decode(data);
+}
+
+function followingsDecode(data) {
+  return Followings.decode(data);
+}
+
 function encode(tx) {
   switch (tx.version) {
     case 1:
@@ -22,7 +35,7 @@ function decode(data) {
   switch (versionTx.version) {
     case 1:
       return v1.decode(data);
-    
+
     default:
       throw Error('Unsupport version');
   }
@@ -57,4 +70,4 @@ function hash(tx) {
     .toUpperCase();
 }
 
-module.exports = { encode, decode, verify, sign, hash };
+module.exports = { encode, decode, verify, sign, hash, followingsDecode, contentDecode };

@@ -10,8 +10,7 @@ const Info = require('./info')
 const Post = require('./post')
 const Interact = require('./interact')
 
-const { decode, verify, hash } = require('./tx');
-const v1 = require('./tx/v1')
+const { decode, verify, hash, followingsDecode } = require('./tx');
 
 // 24 hours
 const BANDWIDTH_PERIOD = 86400;
@@ -25,60 +24,68 @@ const NETWORK_BANDWIDTH = RESERVE_RATIO * MAX_BLOCK_SIZE * BANDWIDTH_PERIOD;
 
 // Sync DB
 const { RpcClient } = require('tendermint')
-const Client = RpcClient('wss://komodo.forest.network:443')
+const Client = RpcClient('wss://dragonfly.forest.network:443')
 
-const tx_method = {
-  async blockInfo() {
+const BlockSync = {
+  async getInfo() {
     const latestBlock = await Block.findOne({
       order: [['time', 'DESC']],
     });
     if (latestBlock) {
-      return {
-        last_block_height: latestBlock.height,
-        last_block_app_hash: Buffer.from(latestBlock.appHash, 'hex'),
-      };
+      return latestBlock.height;
     }
-    return {
-      last_block_height: 0,
-      last_block_app_hash: INITIAL_APP_HASH,
-    }
+
+    return 0;
   },
 
-  async beginBlock(req) {
-    const hash = req.hash.toString('hex').toUpperCase();
-    const height = req.header.height.toString();
-    const time = moment
-      .unix(Number(req.header.time.seconds))
-      .toDate();
-    console.log(`Begin block ${height} hash ${hash}`);
-    this.blockTransaction = await db.transaction();
-    const previousBlock = await Block.findOne({
+  async beginBlock() {
+    const latestBlock = await Block.findOne({
       order: [['time', 'DESC']],
-    }, { transaction: this.blockTransaction });
-    this.appHash = previousBlock ? Buffer.from(previousBlock.appHash, 'hex') : INITIAL_APP_HASH;
-    // Add block to db
-    this.currentBlock = { height, hash, time };
-    return {};
+    });
+    if (latestBlock) {
+      this.currentBlock = {
+        height: latestBlock.height,
+        hash: latestBlock.hash,
+        time: latestBlock.time,
+        appHash: latestBlock.appHash,
+      }
+    } else {
+      this.currentBlock = null;
+    }
+    // const hash = req.hash.toString('hex').toUpperCase();
+    // const height = req.header.height.toString();
+    // const time = moment
+    //   .unix(Number(req.header.time.seconds))
+    //   .toDate();
+    // console.log(`Begin block ${height} hash ${hash}`);
+    // this.blockTransaction = await db.transaction();
+    // const previousBlock = await Block.findOne({
+    //   order: [['time', 'DESC']],
+    // }, { transaction: this.blockTransaction });
+    // this.appHash = previousBlock ? Buffer.from(previousBlock.appHash, 'hex') : INITIAL_APP_HASH;
+    // // Add block to db
+    // this.currentBlock = { height, hash, time };
+    // return {};
   },
 
-  async endBlock(_req) {
-    console.log('End block');
-    await Block.create({
-      ...this.currentBlock,
-      appHash: this.appHash.toString('hex').toUpperCase(),
-    }, { transaction: this.blockTransaction });
-    return {};
-  },
+  // async endBlock(_req) {
+  //   console.log('End block');
+  //   await Block.create({
+  //     ...this.currentBlock,
+  //     appHash: this.appHash.toString('hex').toUpperCase(),
+  //   }, { transaction: this.blockTransaction });
+  //   return {};
+  // },
 
-  async commit(_req) {
-    console.log(`Commit block with app hash ${this.appHash.toString('hex').toUpperCase()}`);
-    await this.blockTransaction.commit();
-    return {
-      data: this.appHash,
-    };
-  },
+  // async commit(_req) {
+  //   console.log(`Commit block with app hash ${this.appHash.toString('hex').toUpperCase()}`);
+  //   await this.blockTransaction.commit();
+  //   return {
+  //     data: this.appHash,
+  //   };
+  // },
 
-  async executeTx(req, dbTransaction, isCheckTx) {
+  async executeTx(buf, dbTransaction, isCheckTx) {
     // Tag by source account and to account
     const tags = [];
 
@@ -87,8 +94,8 @@ const tx_method = {
     } else {
       console.log('Deliver tx');
     }
-    const tx = decode(req.tx);
-    const txSize = req.tx.length;
+    const tx = decode(buf);
+    const txSize = buf.length;
     tx.hash = hash(tx);
     const { operation } = tx;
     // Check signature
@@ -169,28 +176,29 @@ const tx_method = {
       const { content, keys } = tx.params;
       await Post.create({
         hash: tx.hash,
+        author: tx.account,
         content,
         keys
       }, { transaction: dbTransaction })
       console.log(`${tx.hash}: ${account.address} posted ${content.length} bytes with ${keys.length} keys`);
     } else if (operation === 'update_account') {
       const { key, value } = tx.params;
-      const found = await Info.findByPk(account.address);
+      const found = await Info.findByPk(tx.account);
       if (!found) {
         throw Error('Account does not exists');
       }
       switch (key) {
         case 'name':
-          info.name = value.toString('utf-8');
+          found.name = value.toString('utf-8');
           break;
         case 'picture':
-          info.picture = value;
+          found.picture = value;
           break;
         case 'following':
-          info.followings = v1.followingsDecode(value);
+          found.followings = followingsDecode(value);
           break;
       }
-      await info.save();
+      await found.save({ transaction: dbTransaction });
       console.log(`${tx.hash}: ${account.address} update ${key} with ${value.length} bytes`);
     } else if (operation === 'interact') {
       const { object, content } = tx.params;
@@ -237,11 +245,11 @@ const tx_method = {
     return tx;
   },
 
-  async checkTx(req) {
+  async checkTx(buf) {
     // Create new transaction then rollback to old state
     const checkTransaction = await db.transaction();
     try {
-      const tx = await this.executeTx(req, checkTransaction, true);
+      const tx = await this.executeTx(buf, checkTransaction, true);
       await checkTransaction.rollback();
       return {};
     } catch (err) {
@@ -250,13 +258,13 @@ const tx_method = {
     }
   },
 
-  async deliverTx(req) {
+  async deliverTx(buf) {
     // Execute within block db transaction
     const deliverTransaction = await db.transaction({
       transaction: this.blockTransaction,
     });
     try {
-      await this.executeTx(req, deliverTransaction);
+      await this.executeTx(buf, deliverTransaction);
       await deliverTransaction.commit();
     } catch (err) {
       await deliverTransaction.rollback();
@@ -264,47 +272,42 @@ const tx_method = {
     }
   },
 
-  async query(req) {
-    try {
-      const parts = req.path.split('/');
-      if (parts.length === 3 && parts[1] === 'accounts') {
-        const account = await Account.findByPk(parts[2]);
-        if (!account) {
-          throw Error('Account not found');
-        }
-        return {
-          value: Buffer.from(JSON.stringify({
-            address: account.address,
-            balance: Number(account.balance),
-            sequence: Number(account.sequence),
-            bandwidth: Number(account.bandwidth),
-            bandwidthTime: account.bandwidthTime,
-          })),
-        }
-      }
-    } catch (err) {
-      return { code: 1, log: err.toString() };
-    }
-  },
+  // async query(req) {
+  //   try {
+  //     const parts = req.path.split('/');
+  //     if (parts.length === 3 && parts[1] === 'accounts') {
+  //       const account = await Account.findByPk(parts[2]);
+  //       if (!account) {
+  //         throw Error('Account not found');
+  //       }
+  //       return {
+  //         value: Buffer.from(JSON.stringify({
+  //           address: account.address,
+  //           balance: Number(account.balance),
+  //           sequence: Number(account.sequence),
+  //           bandwidth: Number(account.bandwidth),
+  //           bandwidthTime: account.bandwidthTime,
+  //         })),
+  //       }
+  //     }
+  //   } catch (err) {
+  //     return { code: 1, log: err.toString() };
+  //   }
+  // },
 
-  async blockSync() {
-    let info = await this.blockInfo();
-    console.log(info)
-    if (info.last_block_height == 0)
-      this.currentBlock = null;
-    let next_height = parseInt(info.last_block_height) + 1;
-
+  async sync() {
+    console.log('SYNCING........');
+    let height = await this.getInfo() + 1;
     while (true) {
       try {
-        console.log(next_height);
-        const block = await Client.block({ height: next_height });
+        const block = await Client.block({ height });
         const txs = block.block.data.txs;
         if (txs) {
           txs.forEach(async (tx) => {
             const buf = Buffer.from(tx, 'base64');
-            let result = await this.deliverTx({ tx: buf });
-            if (result)
-              console.log(result);
+            let result = await this.deliverTx(buf);
+            if (result && result.code == 1)
+              return;
           });
         }
 
@@ -317,13 +320,20 @@ const tx_method = {
         }
 
         await Block.create(this.currentBlock);
-        next_height++;
+        height++;
       } catch (err) {
-        setTimeout(this.blockSync(), 60000);
+        console.log('SYNCED.........')
+        setTimeout(() => {
+          this.sync();
+        }, 10000)
         return;
       }
     }
+  },
+
+  async commitTransaction(tx) {
+    Client.broadcast_tx_commit({ tx });
   }
 };
 
-module.exports = tx_method
+module.exports = BlockSync

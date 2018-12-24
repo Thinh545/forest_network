@@ -6,6 +6,9 @@ const Post = db.define('post', {
         type: Sequelize.STRING,
         primaryKey: true,
     },
+    author: {
+        type: Sequelize.STRING,
+    },
     content: {
         type: Sequelize.STRING.BINARY,
     },

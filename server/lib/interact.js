@@ -5,6 +5,7 @@ const Interact = db.define('interact', {
     hash: {
         type: Sequelize.STRING,
         allowNull: false,
+        primaryKey: true,
     },
     content: {
         type: Sequelize.STRING.BINARY,
