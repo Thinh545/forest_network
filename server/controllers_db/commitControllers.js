@@ -1,4 +1,16 @@
 const BlockSync = require('./../lib/sync')
+const _ = require('lodash');
+const axios = require('axios');
+
+// Lib
+const v1 = require('./../lib/tx/v1');
+
+// const transaction = require('./../lib/tx/index');
+const transaction = require('./../lib/tx/index');
+
+const {
+    broadcastTxCommitURL
+} = require('../configs/api');
 
 module.exports = {
     postTransaction: async (req, res) => {
@@ -18,7 +30,8 @@ module.exports = {
             tx.signature = Buffer.from(tx.signature, 'base64');
 
             const txData = '0x' + transaction.encode(tx).toString('hex');
-            BlockSync.commitTransaction(txData);
+            const url = broadcastTxCommitURL + txData;
+            const commit_create_account = await axios.default.get(url)
 
             res.status(200);
             data_return.status = 200;

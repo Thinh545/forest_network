@@ -50,7 +50,8 @@ module.exports = {
 
     getInteractParams: async (req, res) => {
         const account = req.query.account;
-        const public_key = req.query.public_key;
+        const object = req.query.object;
+        const content = req.query.content;
 
         let data_return = {
             msg: 'Unexpected Error',
@@ -60,23 +61,31 @@ module.exports = {
         if (_.isEmpty(account) || !_.isString(account)) {
             res.status(400)
             data_return.msg = 'Invalid <account> string !'
-        } else if (_.isEmpty(public_key) || !_.isString(public_key)) {
-            data_return.msg = 'Invalid <public_key> string !'
+        } else if (_.isEmpty(object) || !_.isString(object)) {
+            res.status(400);
+            data_return.msg = 'Invalid <object> string !'
+        } else if (_.isEmpty(content) || !_.isString(content)) {
+            res.status(400);
+            data_return.msg = 'Invalid <content> string !'
         } else {
-            const tx = {
-                version: 1,
-                account: account,
-                sequence: 1,
-                memo: Buffer.from('Create account'),
-                operation: 'create_account',
-                params: {
-                    address: public_key
-                },
-            }
+            const found = await Account.findByPk(account);
+            if (found) {
+                const tx = {
+                    version: 1,
+                    account: account,
+                    sequence: parseInt(found.sequence) + 1,
+                    memo: Buffer.from('Interact'),
+                    operation: 'interact',
+                    params: {
+                        object,
+                        content
+                    },
+                }
 
-            res.status(200);
-            data_return.msg = 'OK !';
-            data_return.data = tx;
+                res.status(200);
+                data_return.msg = 'OK !';
+                data_return.data = tx;
+            }
         }
 
         res.json(data_return);

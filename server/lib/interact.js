@@ -7,6 +7,10 @@ const Interact = db.define('interact', {
         allowNull: false,
         primaryKey: true,
     },
+    author: {
+        type: Sequelize.STRING,
+        allowNull: false,
+    },
     content: {
         type: Sequelize.STRING.BINARY,
         allowNull: false,

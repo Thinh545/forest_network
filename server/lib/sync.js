@@ -88,7 +88,6 @@ const BlockSync = {
   async executeTx(buf, dbTransaction, isCheckTx) {
     // Tag by source account and to account
     const tags = [];
-
     if (isCheckTx) {
       console.log('Check tx');
     } else {
@@ -108,11 +107,11 @@ const BlockSync = {
       throw Error('Account does not exists');
     }
     // Check sequence
-    const nextSequence = new Decimal(account.sequence).add(1);
-    if (!nextSequence.equals(tx.sequence)) {
-      throw Error('Sequence mismatch');
-    }
-    account.sequence = nextSequence.toFixed();
+    // const nextSequence = new Decimal(account.sequence).add(1);
+    // if (!nextSequence.equals(tx.sequence)) {
+    //   throw Error('Sequence mismatch');
+    // }
+    account.sequence = tx.sequence;
     // Check memo
     if (tx.memo.length > 32) {
       throw Error('Memo has more than 32 bytes.');
@@ -148,10 +147,10 @@ const BlockSync = {
       }, { transaction: dbTransaction });
 
       await Info.create({
-        address
+        address,
       }, { transaction: dbTransaction })
 
-      console.log(`${tx.hash}: ${account.address} created ${address}`);
+      console.log(`${tx.hash}: created ${address}`);
     } else if (operation === 'payment') {
       const { address, amount } = tx.params;
       const found = await Account.findByPk(address, { transaction: dbTransaction });
@@ -177,25 +176,25 @@ const BlockSync = {
       await Post.create({
         hash: tx.hash,
         author: tx.account,
-        content,
-        keys
+        content: content,
+        keys: keys,
       }, { transaction: dbTransaction })
       console.log(`${tx.hash}: ${account.address} posted ${content.length} bytes with ${keys.length} keys`);
     } else if (operation === 'update_account') {
       const { key, value } = tx.params;
-      const found = await Info.findByPk(tx.account);
+      const found = await Info.findByPk(account.address);
       if (!found) {
         throw Error('Account does not exists');
       }
       switch (key) {
         case 'name':
-          found.name = value.toString('utf-8');
+          found.name = value;
           break;
         case 'picture':
           found.picture = value;
           break;
-        case 'following':
-          found.followings = followingsDecode(value);
+        case 'followings':
+          found.followings = value;
           break;
       }
       await found.save({ transaction: dbTransaction });
@@ -209,8 +208,9 @@ const BlockSync = {
       }
       await Interact.create({
         hash: object,
-        content
-      })
+        author: tx.account,
+        content: content,
+      }, { transaction: dbTransaction })
       tx.params.address = transaction.author;
       console.log(`${tx.hash}: ${account.address} interact ${object} with ${content.length} bytes`);
     } else {
@@ -264,7 +264,7 @@ const BlockSync = {
       transaction: this.blockTransaction,
     });
     try {
-      await this.executeTx(buf, deliverTransaction);
+      await this.executeTx(buf, deliverTransaction, false);
       await deliverTransaction.commit();
     } catch (err) {
       await deliverTransaction.rollback();
@@ -297,18 +297,19 @@ const BlockSync = {
 
   async sync() {
     console.log('SYNCING........');
-    let height = await this.getInfo() + 1;
+    let height = parseInt(await this.getInfo()) + 1;
     while (true) {
       try {
+        console.log(height)
         const block = await Client.block({ height });
+        const numTx = parseInt(block.block.header.num_txs);
         const txs = block.block.data.txs;
-        if (txs) {
-          txs.forEach(async (tx) => {
-            const buf = Buffer.from(tx, 'base64');
-            let result = await this.deliverTx(buf);
-            if (result && result.code == 1)
-              return;
-          });
+
+        for (let i = 0; i < numTx; i++) {
+          const buf = Buffer.from(txs[i], 'base64');
+          let result = await this.deliverTx(buf);
+          if (result)
+            console.log(result);
         }
 
         const meta = block.block_meta;
@@ -332,7 +333,7 @@ const BlockSync = {
   },
 
   async commitTransaction(tx) {
-    Client.broadcast_tx_commit({ tx });
+    Client.broadcast_tx_commit({ tx: tx });
   }
 };
 

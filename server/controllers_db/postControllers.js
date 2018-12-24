@@ -73,7 +73,7 @@ module.exports = {
                 const tx = {
                     version: 1,
                     account: account,
-                    sequence: found.sequence + 1,
+                    sequence: parseInt(found.sequence) + 1,
                     memo: Buffer.from('Post').toString('base64'),
                     operation: 'post',
                     params: {

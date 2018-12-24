@@ -7,7 +7,7 @@ const Info = db.define('info', {
         primaryKey: true,
     },
     name: {
-        type: Sequelize.STRING,
+        type: Sequelize.STRING.BINARY,
         defaultValue: null,
     },
     picture: {
@@ -15,7 +15,7 @@ const Info = db.define('info', {
         defaultValue: null,
     },
     followings: {
-        type: Sequelize.ARRAY(Sequelize.STRING),
+        type: Sequelize.STRING.BINARY,
         defaultValue: null,
     }
 })

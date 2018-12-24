@@ -51,11 +51,7 @@ module.exports = {
                 const found = await Info.findByPk(public_key);
                 if (found) {
                     data_return.msg = 'OK';
-                    data_return.data = {
-                        name: found.name,
-                        picture: found.picture,
-                        followings: found.followings,
-                    };
+                    data_return.data = found;
                     res.status(200);
                 } else {
                     res.status(404);
@@ -88,6 +84,7 @@ module.exports = {
                     res.status(200);
                     data_return.msg = 'OK';
                     data_return.data = {
+                        sequence: found.sequence,
                         balance: found.balance,
                         energy: calcuEnergy(found),
                     };
@@ -127,7 +124,7 @@ module.exports = {
                 const tx = {
                     version: 1,
                     account: account,
-                    sequence: found.sequence + 1,
+                    sequence: parseInt(found.sequence) + 1,
                     memo: Buffer.from('Create account').toString('base64'),
                     operation: 'create_account',
                     params: {
@@ -176,8 +173,8 @@ module.exports = {
 
     getPaymenParams: async (req, res) => {
         const account = req.query.account;
-        const address = req.query.public_key;
-        const amount = req.query.amount;
+        const address = req.query.address;
+        const amount = parseInt(req.query.amount);
 
         let data_return = {
             msg: 'Unexpected Error',
@@ -189,7 +186,7 @@ module.exports = {
             data_return.msg = 'account must be a string and not empty !'
         } else if (_.isEmpty(address) || !_.isString(address)) {
             res.status(400)
-            data_return.msg = 'public_key must be a string and not empty !'
+            data_return.msg = 'address must be a string and not empty !'
         } else if (!_.isNumber(amount) || _.isNaN(amount) || _.isNull(amount)) {
             res.status(400)
             data_return.msg = 'amount must be a number and > 0 !'
@@ -199,7 +196,7 @@ module.exports = {
                 const tx = {
                     version: 1,
                     account: account,
-                    sequence: found.sequence + 1,
+                    sequence: parseInt(found.sequence) + 1,
                     memo: Buffer.from('Payment'),
                     operation: 'payment',
                     params: {
@@ -245,7 +242,7 @@ module.exports = {
                 const tx = {
                     version: 1,
                     account: account,
-                    sequence: found.sequence + 1,
+                    sequence: parseInt(found.sequence) + 1,
                     memo: Buffer.from('Update account').toString('base64'),
                     operation: 'update_account',
                     params: {
