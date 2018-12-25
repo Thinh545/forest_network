@@ -7,9 +7,6 @@ const crypto = require('crypto');
 const account = require('./../lib/account')
 const db = require('./../lib/db');
 
-// Models
-const accountModel = require('./../models/accountModel');
-
 // Configs
 const {
     searchTransactionsURL,
@@ -145,35 +142,6 @@ module.exports = {
 
         res.json(data_return);
     },
-
-
-    // createAccount: (req, res) => {
-    //     // const tx = req.body.tx;
-    //     // console.log(tx);
-    //     let tx = {
-    //         version: 1,
-    //         account : 'GDQVHLWFQW3M6H23J2IMRMBK4MHZ5ZF56LJWN7WNXPAMRTL5MQPVCPKL',
-    //         sequence: 1,
-    //         memo: Buffer.from('Test create account'),
-    //         operation: 'create_account',
-    //         params: {
-    //             address: 'GDCRVBWSBCUP74I7FWXBIX56QCXTDAKD4CZQDBUTM7CKYAI2BOGSYUAP'
-    //         },
-    //     }
-
-    //     // const data = transaction.encode(tx);
-    //     // const data = transaction.encode(tx).toString('hex');
-    //     // const unsignedHash = crypto
-    //     // .createHash('sha256')
-    //     // .update(data)
-    //     // .digest();
-    //     transaction.sign(tx, 'SCRC7SUP5WKJLEFWCUSBBLJ7RI2TCDLA5O6Q4BWBFW2M57JNTCVN3LIO')
-    //     const data = '0x' + transaction.encode(tx).toString('hex');
-
-    //     // const commit = axios.default.post()
-    //     console.log(data);
-    //     res.send(data);
-    // },
 
     getCreateParams: async (req, res) => {
         const account = req.query.account;
