@@ -32,7 +32,7 @@ class Profile extends Component {
                     </Menu.Item>
 
                     <Menu.Item key="logout">
-                        <Link to = '/login'>
+                        <Link to = '/'>
                             Logout
                         </Link>
                     </Menu.Item>

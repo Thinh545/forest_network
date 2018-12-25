@@ -1,5 +1,6 @@
 let initialState = {
     enableEdit: false,
+    username: '',
     photoUrl: 'YoutubeAva.png',
     username: 'Youtube',
     channel: '@Youtube',

@@ -4,14 +4,16 @@ import { connect } from 'react-redux';
 import { Input, Icon, Layout, Button, Modal } from 'antd';
 import './style.css';
 import { Link } from 'react-router-dom';
-import  {API_ACCOUNT} from '../../configs/index';
+import  {API_ACCOUNT, HOST} from '../../configs/index';
 import axios from 'axios';
 import querystring from 'querystring';
 import {
     Keypair
 } from 'stellar-base';
-
+import { updateSecret, updateUserInfo } from '../../redux/actions/RightSide';
+import { updateUsername } from '../../redux/actions/LeftSide';
 import { sign } from './../../helpers/tx/index'
+import { createCipher } from 'crypto';
 
 class Login extends Component{
     constructor(props){
@@ -19,7 +21,8 @@ class Login extends Component{
         this.state = {
             modalVisible: false,
             account: '',
-            address: ''
+            address: '',
+            key: ''
         }
     }
 
@@ -60,13 +63,25 @@ class Login extends Component{
                                 defaultValue = 'Input your public key'
                                 style = {styles.inputStyle}
                                 color = 'black'
+                                onChange = {(e) => {
+                                    this.setState({key: e.target.value});
+                                }}
                             />
                             <Button 
                                 style = {styles.loginButton}
+                                onClick = { async () => {
+                                    if(this.state.key != ''){
+                                        const result = await this.props.login(this.state.key);
+                                        if(result == true){
+                                            this.props.history.push('/home');
+                                        }   
+                                        else{
+                                            alert('Đăng nhập thất bại');
+                                        }
+                                    }
+                                }}
                             >
-                                <Link to = '/'>
-                                    Login
-                                </Link>
+                                Login
                             </Button>
                         </Layout>
                         <Layout style = {styles.signUpWrapper}>
@@ -109,6 +124,71 @@ class Login extends Component{
         )
     }
 }
+
+
+const mapStateToProps = ( state ) => ({
+    
+});
+
+const mapDispatchToProps = (dispatch) => ({
+    _handleSignUp: async (secret, address) => {
+        const keypair = Keypair.fromSecret(secret);
+        const account = keypair.publicKey();
+
+        const get_url = API_ACCOUNT + 'create_params?account=' + account + '&address=' + address;
+
+        const getTx = await axios.get(get_url);
+        let tx = getTx.data.data;
+        tx.memo = Buffer.from(tx.memo, 'base64');
+
+        console.log(tx);
+        sign(tx , secret);
+
+        tx.memo = tx.memo.toString('base64');
+        tx.signature = tx.signature.toString('base64');
+
+        const post_url = HOST + 'commit/transaction';
+
+        const postTx = await axios.post(
+            post_url,
+            { tx: tx },
+        );
+
+        console.log(postTx.data);
+        if(postTx.data.status == 200){
+            alert('Bạn đã tạo thành công tài khoản ' + address );
+        }
+        else{
+            alert('Tạo tài khoản thất bại');
+        }
+    },
+    login: async ( secret ) => {
+        try{
+            const keypair = Keypair.fromSecret(secret);
+            const account = keypair.publicKey();
+
+            const get_url = API_ACCOUNT + 'info?public_key=' + account;
+
+            const getTx = await axios.get(get_url);
+            let tx = getTx.data.data;
+
+            console.log(tx);
+            if(getTx.status == 200){
+                dispatch(updateSecret(secret));
+                dispatch(updateUserInfo(tx));
+                dispatch(updateUsername(tx.name));
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+        catch(e){
+            console.log(e);
+            return false;
+        }
+    }
+});
 
 const styles = {
     container: {
@@ -174,42 +254,5 @@ const styles = {
     }
 };
 
-const mapStateToProps = () => ({
-    _handleSignUp: async (secret, address) => {
-        const keypair = Keypair.fromSecret(secret);
-        const account = keypair.publicKey();
-
-        const get_url = API_ACCOUNT + 'create_params?account=' + account + '&address=' + address;
-
-        const getTx = await axios.get(get_url);
-
-        let tx = getTx.data.data;
-        tx.memo = Buffer.from(tx.memo, 'base64');
-
-        sign(tx , secret);
-
-        tx.memo = tx.memo.toString('base64');
-        tx.signature = tx.signature.toString('base64');
-
-        const post_url = API_ACCOUNT + 'create_commit';
-
-        const postTx = await axios.post(
-            post_url,
-            { tx: tx },
-        );
-
-        console.log(postTx.data);
-        if(postTx.data.status == 200){
-            alert('Bạn đã tạo thành công tài khoản ' + address );
-        }
-        else{
-            alert('Tạo tài khoản thất bại');
-        }
-    }
-});
-
-const mapDispatchToProps = () => ({
-
-});
 
 export default connect(mapStateToProps, mapDispatchToProps)(Login);

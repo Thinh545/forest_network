@@ -10,6 +10,12 @@ import {
     updateLocation,
     updateWebsite,
 } from '../../redux/actions/LeftSide';
+import ImageUploader from 'react-images-upload';
+import axios from 'axios';
+import { API_ACCOUNT, HOST } from '../../configs/index';
+import { Keypair } from 'stellar-base';
+import { sign } from './../../helpers/tx/index'
+
 
 class Header extends Component {
     constructor(props) {
@@ -22,7 +28,8 @@ class Header extends Component {
             pressSave: false,
             isAffixChange: false,
             tweetModalVisible: false,
-            content: ''
+            content: '',
+            avatar: []
         }
     }
 
@@ -54,11 +61,19 @@ class Header extends Component {
         })
     }
 
+    onDrop(pictureFiles, pictureDataURLs) {
+		this.setState({
+            avatar: this.state.avatar.concat(pictureFiles),
+        });
+	}
+
     channelProfile = () => {
         if (this.state.isAffixChange) {
             return (
                 [
-                    <Col span={1}> <Avatar shape="square" src={this.props.photoUrl} /></Col>,
+                    <Col span={1}> 
+                        <Avatar shape="square" src={this.props.photoUrl} />
+                    </Col>,
                     <Col span={4} style={{fontSize: '20px' }}><strong>{this.props.username}</strong></Col>
                 ]
             )
@@ -66,6 +81,11 @@ class Header extends Component {
             return (
                 <Col span={5}>
                     <img src={this.props.photoUrl} style={{ position: "absolute", borderRadius: "50%", zIndex: 3, top: "-150px", maxWidth: "100%", width: "210px" }}></img>
+                    {/* <ImageUploader
+                            //buttonText='Choose images'
+                            onChange={this.onDrop}
+                            imgExtension={['.jpg', '.gif', '.png', '.gif']}
+                        /> */}
                 </Col>
             )
         }
@@ -175,6 +195,7 @@ class Header extends Component {
                                         website: this.props.website,
                                         pressSave: true
                                     });
+                                    this.props.updateNameToServer(this.props.secret, this.props.username);
                                 }}
                             >Save</Button>}
                         </Col>
@@ -252,6 +273,7 @@ const MapStateToProps = (state) => ({
     website: state['editInfo'].website,
     following: state['following'].followings.length,
     followers: state['follower'].followers.length,
+    secret: state['blockchain'].secret
 });
 
 const MapDispatchToProps = (dispatch) => ({
@@ -264,6 +286,44 @@ const MapDispatchToProps = (dispatch) => ({
         dispatch(updateLocation(location));
         dispatch(updateWebsite(website));
     },
+    updateNameToServer: async ( secret, name ) => {
+        const keypair = Keypair.fromSecret(secret);
+        const account = keypair.publicKey();
+
+        const url = API_ACCOUNT + 'update_params?account=' + account + '&key=name&value=' + name;
+
+        const getTx = await axios({
+            url,
+            method: 'GET'
+        });
+
+        let tx = getTx.data.data;
+       
+        tx.memo = Buffer.from(tx.memo, 'base64');
+        tx.params.value = Buffer.from( tx.params.value, 'base64');
+
+        console.log(tx);
+        sign(tx , secret);
+
+        tx.memo = tx.memo.toString('base64');
+        tx.signature = tx.signature.toString('base64');
+        tx.params.value = tx.params.value.toString('base64');
+
+        const post_url = HOST + 'commit/transaction';
+
+        const postTx = await axios.post(
+            post_url,
+            { tx: tx },
+        );
+
+        console.log(postTx.data);
+        if(postTx.data.status == 200){
+            alert('Cập nhật thông tin thành công');
+        }
+        else{
+            alert('Tạo tài khoản thất bại');
+        }
+    }
 });
 
 export default connect(MapStateToProps, MapDispatchToProps)(Header);

@@ -3,8 +3,13 @@ import { connect } from 'react-redux';
 import { Layout, Icon, Input, Modal, Button } from 'antd';
 import axios from 'axios';
 import { updateBlockchainData } from '../../redux/actions/RightSide';
-import { API_ACCOUNT } from '../../configs/index';
+import { API_ACCOUNT, HOST } from '../../configs/index';
 import './blockchain.css';
+import {
+    Keypair
+} from 'stellar-base';
+
+import { sign } from './../../helpers/tx/index'
 
 const { Content } = Layout;
 
@@ -20,7 +25,7 @@ class UserBlockchainInfo extends Component {
     }
 
     componentDidMount(){
-       this.props.getBlockchainInfo();
+       this.props.getBlockchainInfo(this.props.secret);
     }
 
     render() {
@@ -57,8 +62,11 @@ class UserBlockchainInfo extends Component {
                     cancelText = {'Hủy bỏ'}
                     okButtonProps = {{style: {backgroundColor: 'red', borderColor: 'red'}}}
                     onOk = {() => {
-                        if(this.props.data.data.balance >= this.state.transferAmount){
-                            console.log('Transfer accepter');
+                        if(Number.parseInt(this.props.data.data.balance) >= Number.parseInt(this.state.transferAmount)){
+                            console.log(this.props.data.data.balance + ' -- ' + this.state.transferAmount)
+
+                            this.props.transferMoney(this.state.secret, this.state.transferPublicKey, this.state.transferAmount);
+                            this.setState({modalVisible: false});
                         }
                     }}
                 >
@@ -142,12 +150,16 @@ const styles = {
 
 
 const mapStateToProps = (state) => ({
-    data: state['blockchain'].data
+    data: state['blockchain'].data,
+    secret: state['blockchain'].secret
 });
 
 const mapDispatchToProps = (dispatch) => ({
-    getBlockchainInfo: async () => {
-        const url = API_ACCOUNT + 'balance?public_key=GDQVHLWFQW3M6H23J2IMRMBK4MHZ5ZF56LJWN7WNXPAMRTL5MQPVCPKL';
+    getBlockchainInfo: async (secret) => {
+        const keypair = Keypair.fromSecret(secret);
+        const account = keypair.publicKey();
+
+        const url = API_ACCOUNT + 'balance?public_key=' + account;
         
         const res = await axios({
             url,
@@ -155,6 +167,41 @@ const mapDispatchToProps = (dispatch) => ({
         });
         console.log("AAAAA: " + JSON.stringify(res.data));
         return dispatch(updateBlockchainData(res.data));
+    },
+    transferMoney: async (secret, address, amount) => {
+        const keypair = Keypair.fromSecret(secret);
+        const account = keypair.publicKey();
+
+        const url = API_ACCOUNT + 'payment_params?account=' + account + '&address=' + address + '&amount=' + amount;
+
+        const getTx = await axios({
+            url,
+            method: 'GET'
+        });
+
+        let tx = getTx.data.data;
+        tx.memo = Buffer.from(tx.memo, 'base64');
+
+        console.log(tx);
+        sign(tx , secret);
+
+        tx.memo = tx.memo.toString('base64');
+        tx.signature = tx.signature.toString('base64');
+
+        const post_url = HOST + 'commit/transaction';
+
+        const postTx = await axios.post(
+            post_url,
+            { tx: tx },
+        );
+
+        console.log(postTx.data);
+        if(postTx.data.status == 200){
+            alert('Bạn đã chuyển thành công số tiền' + amount + ' cho tài khoản ' + address );
+        }
+        else{
+            alert('Tạo tài khoản thất bại');
+        }
     }
 });
 
