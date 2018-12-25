@@ -3,13 +3,13 @@ import { connect } from 'react-redux';
 import { Layout, Icon, Input, Modal, Button } from 'antd';
 import axios from 'axios';
 import { updateBlockchainData } from '../../redux/actions/RightSide';
-import { API_ACCOUNT, HOST } from '../../configs/index';
+import { API_ACCOUNT, HOST, BroadcastTxCommitURL } from '../../configs/index';
 import './blockchain.css';
 import {
     Keypair
 } from 'stellar-base';
 
-import { sign } from './../../helpers/tx/index'
+import { sign, encode } from './../../helpers/tx/index'
 
 const { Content } = Layout;
 
@@ -172,35 +172,45 @@ const mapDispatchToProps = (dispatch) => ({
         const keypair = Keypair.fromSecret(secret);
         const account = keypair.publicKey();
 
-        const url = API_ACCOUNT + 'payment_params?account=' + account + '&address=' + address + '&amount=' + amount;
+        try{
+            const get_url = API_ACCOUNT + 'next_sequence?public_key=' + account;
+            const get_sequence = await axios.get(get_url);
+            // Check return
 
-        const getTx = await axios({
-            url,
-            method: 'GET'
-        });
+            console.log('Sequence: ' + get_sequence.data.data.nextSequence + 1);
+            const tx = {
+                version: 1,
+                account: account,
+                sequence: Number.parseInt(get_sequence.data.data.nextSequence),
+                memo: Buffer.from('Payment'),
+                operation: 'payment',
+                params: {
+                    address: address,
+                    amount: Number.parseInt(amount)
+                },
+            }
 
-        let tx = getTx.data.data;
-        tx.memo = Buffer.from(tx.memo, 'base64');
+            //console.log(tx);
+            sign(tx , secret);
 
-        console.log(tx);
-        sign(tx , secret);
+            // encode transaction
+            const txData = '0x' + encode(tx).toString('hex');
+            const url = BroadcastTxCommitURL + txData;
+            
+            const res = await axios.default.get(url)
 
-        tx.memo = tx.memo.toString('base64');
-        tx.signature = tx.signature.toString('base64');
-
-        const post_url = HOST + 'commit/transaction';
-
-        const postTx = await axios.post(
-            post_url,
-            { tx: tx },
-        );
-
-        console.log(postTx.data);
-        if(postTx.data.status == 200){
-            alert('Bạn đã chuyển thành công số tiền' + amount + ' cho tài khoản ' + address );
+            if(res.status == 200){
+                console.log(res.data);
+                alert('Chuyển khoản thành công');
+            }
+            else{
+                alert('Chuyển khoản thất bại');
+            }
+        
         }
-        else{
-            alert('Tạo tài khoản thất bại');
+        catch(e){
+            console.log(e);
+            alert('Có lỗi xảy ra, chuyển khoản thất bại!');
         }
     }
 });

@@ -4,7 +4,7 @@ import { connect } from 'react-redux';
 import { Input, Icon, Layout, Button, Modal } from 'antd';
 import './style.css';
 import { Link } from 'react-router-dom';
-import  {API_ACCOUNT, HOST} from '../../configs/index';
+import  {API_ACCOUNT, BroadcastTxCommitURL, HOST} from '../../configs/index';
 import axios from 'axios';
 import querystring from 'querystring';
 import {
@@ -12,8 +12,7 @@ import {
 } from 'stellar-base';
 import { updateSecret, updateUserInfo } from '../../redux/actions/RightSide';
 import { updateUsername } from '../../redux/actions/LeftSide';
-import { sign } from './../../helpers/tx/index'
-import { createCipher } from 'crypto';
+import { sign, encode, decode } from './../../helpers/tx/index'
 
 class Login extends Component{
     constructor(props){
@@ -22,7 +21,7 @@ class Login extends Component{
             modalVisible: false,
             account: '',
             address: '',
-            key: ''
+            key: 'SDXCBYRWNQRQXZQQNDZFMHJ75WY6H2PIDJGJMTNYBONJVX2RZMFUHUYP'
         }
     }
 
@@ -60,7 +59,7 @@ class Login extends Component{
                         </label>
                         <Layout style = {styles.rightBottomWrapper}>
                             <Input
-                                defaultValue = 'Input your public key'
+                                defaultValue = 'SDXCBYRWNQRQXZQQNDZFMHJ75WY6H2PIDJGJMTNYBONJVX2RZMFUHUYP'
                                 style = {styles.inputStyle}
                                 color = 'black'
                                 onChange = {(e) => {
@@ -135,32 +134,72 @@ const mapDispatchToProps = (dispatch) => ({
         const keypair = Keypair.fromSecret(secret);
         const account = keypair.publicKey();
 
-        const get_url = API_ACCOUNT + 'create_params?account=' + account + '&address=' + address;
+        // const get_url = API_ACCOUNT + 'create_params?account=' + account + '&address=' + address;
 
-        const getTx = await axios.get(get_url);
-        let tx = getTx.data.data;
-        tx.memo = Buffer.from(tx.memo, 'base64');
+        // const getTx = await axios.get(get_url);
+        // let tx = getTx.data.data;
+        // tx.memo = Buffer.from(tx.memo, 'base64');
 
-        console.log(tx);
-        sign(tx , secret);
+        // console.log(tx);
+        // sign(tx , secret);
 
-        tx.memo = tx.memo.toString('base64');
-        tx.signature = tx.signature.toString('base64');
+        // tx.memo = tx.memo.toString('base64');
+        // tx.signature = tx.signature.toString('base64');
 
-        const post_url = HOST + 'commit/transaction';
+        // const post_url = HOST + 'commit/transaction';
 
-        const postTx = await axios.post(
-            post_url,
-            { tx: tx },
-        );
+        // const postTx = await axios.post(
+        //     post_url,
+        //     { tx: tx },
+        // );
 
-        console.log(postTx.data);
-        if(postTx.data.status == 200){
-            alert('Bạn đã tạo thành công tài khoản ' + address );
+        // console.log(postTx.data);
+        // if(postTx.data.status == 200){
+        //     alert('Bạn đã tạo thành công tài khoản ' + address );
+        // }
+        // else{
+        //     alert('Tạo tài khoản thất bại');
+        // }
+        try{
+            const get_url = API_ACCOUNT + 'next_sequence?public_key=' + account;
+            const get_sequence = await axios.get(get_url);
+            // Check return
+            console.log(get_sequence);
+            let tx = {
+                version: 1,
+                account: account,
+                sequence: Number.parseInt(get_sequence.data.data.nextSequence),
+                memo: Buffer.from('Create account'),
+                operation: 'create_account',
+                params: {
+                    address: address
+                },
+            }
+
+            //console.log(tx);
+            sign(tx , secret);
+
+            // encode transaction
+            const txData = '0x' + encode(tx).toString('hex');
+            const url = BroadcastTxCommitURL + txData;
+            
+            const res = await axios.default.get(url)
+
+            if(res.status == 200){
+                console.log(res);
+                alert('Tạo tài khoản thành công');
+            }
+            else{
+                alert('Tạo tài khoản thất bại');
+            }
+        
         }
-        else{
-            alert('Tạo tài khoản thất bại');
+        catch(e){
+            console.log(e);
+            alert('Có lỗi xảy ra, tạo tài khoản thất bại!');
         }
+
+        
     },
     login: async ( secret ) => {
         try{
@@ -171,12 +210,14 @@ const mapDispatchToProps = (dispatch) => ({
 
             const getTx = await axios.get(get_url);
             let tx = getTx.data.data;
-
             console.log(tx);
+            let name = Buffer.from(tx.name.data).toString('utf8');
+            console.log(name);
+            
             if(getTx.status == 200){
                 dispatch(updateSecret(secret));
                 dispatch(updateUserInfo(tx));
-                dispatch(updateUsername(tx.name));
+                dispatch(updateUsername(name));
                 return true;
             }
             else{

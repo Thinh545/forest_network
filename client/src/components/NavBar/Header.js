@@ -12,9 +12,9 @@ import {
 } from '../../redux/actions/LeftSide';
 import ImageUploader from 'react-images-upload';
 import axios from 'axios';
-import { API_ACCOUNT, HOST } from '../../configs/index';
+import { API_ACCOUNT, HOST, BroadcastTxCommitURL } from '../../configs/index';
 import { Keypair } from 'stellar-base';
-import { sign } from './../../helpers/tx/index'
+import { sign, encode } from './../../helpers/tx/index'
 
 
 class Header extends Component {
@@ -29,7 +29,8 @@ class Header extends Component {
             isAffixChange: false,
             tweetModalVisible: false,
             content: '',
-            avatar: []
+            avatar: null,
+            file: null
         }
     }
 
@@ -80,15 +81,26 @@ class Header extends Component {
         } else {
             return (
                 <Col span={5}>
-                    <img src={this.props.photoUrl} style={{ position: "absolute", borderRadius: "50%", zIndex: 3, top: "-150px", maxWidth: "100%", width: "210px" }}></img>
-                    {/* <ImageUploader
-                            //buttonText='Choose images'
-                            onChange={this.onDrop}
-                            imgExtension={['.jpg', '.gif', '.png', '.gif']}
-                        /> */}
+                    <img src={this.state.avatar ? this.state.avatar : this.props.photoUrl} style={{ position: "absolute", borderRadius: "50%", zIndex: 3, top: "-150px", maxWidth: "100%", width: "210px" }}></img>
                 </Col>
             )
         }
+    }
+
+    _handleImageChange = (e) => {
+        e.preventDefault();
+    
+        let reader = new FileReader();
+        let file = e.target.files[0];
+    
+        reader.onloadend = () => {
+            this.setState({
+                file: file,
+                avatar: reader.result
+            });
+        }
+    
+        reader.readAsDataURL(file)
     }
 
     render() {
@@ -147,14 +159,20 @@ class Header extends Component {
                         {/* <Col span={1}> <Avatar shape="square" icon="user" /></Col>
 
                         <Col span={4} style={{ width: '230px', fontSize: '20px' }}><strong>Channel</strong></Col> */}
-
+                        {this.props.enableEdit && <Col span={2} align="center">
+                            <input
+                                type = 'file'
+                                style = {{width: '100%'}}
+                                onChange = {this._handleImageChange}
+                            />
+                        </Col>}
                         <Col span={2} align="center">Posts<br /><strong>0</strong></Col>
 
                         <Col span={2} align="center">Following<br /><strong>{this.props.following}</strong></Col>
 
                         <Col span={2} align="center">Followers<br /><strong>{this.props.followers}</strong></Col>
 
-                        <Col span={7}></Col>
+                        <Col span={5}></Col>
                         <Col span={4}>
                             {!this.props.enableEdit && <Button
                                 type='danger'
@@ -196,6 +214,7 @@ class Header extends Component {
                                         pressSave: true
                                     });
                                     this.props.updateNameToServer(this.props.secret, this.props.username);
+                                    //this.props.udateAvatarToServer(this.props.secret, this.state.avatar);
                                 }}
                             >Save</Button>}
                         </Col>
@@ -290,38 +309,87 @@ const MapDispatchToProps = (dispatch) => ({
         const keypair = Keypair.fromSecret(secret);
         const account = keypair.publicKey();
 
-        const url = API_ACCOUNT + 'update_params?account=' + account + '&key=name&value=' + name;
+        try{
+            const get_url = API_ACCOUNT + 'next_sequence?public_key=' + account;
+            const get_sequence = await axios.get(get_url);
+            // Check return
+            const tx = {
+                version: 1,
+                account: account,
+                sequence: Number.parseInt(get_sequence.data.data.nextSequence),
+                memo: Buffer.from('Update_account'),
+                operation: 'update_account',
+                params: {
+                    key: 'name',
+                    value: Buffer.from(name, 'utf8')
+                },
+            }
 
-        const getTx = await axios({
-            url,
-            method: 'GET'
-        });
+            //console.log(tx);
+            sign(tx , secret);
 
-        let tx = getTx.data.data;
-       
-        tx.memo = Buffer.from(tx.memo, 'base64');
-        tx.params.value = Buffer.from( tx.params.value, 'base64');
+            // encode transaction
+            const txData = '0x' + encode(tx).toString('hex');
+            const url = BroadcastTxCommitURL + txData;
+            
+            const res = await axios.default.get(url)
 
-        console.log(tx);
-        sign(tx , secret);
-
-        tx.memo = tx.memo.toString('base64');
-        tx.signature = tx.signature.toString('base64');
-        tx.params.value = tx.params.value.toString('base64');
-
-        const post_url = HOST + 'commit/transaction';
-
-        const postTx = await axios.post(
-            post_url,
-            { tx: tx },
-        );
-
-        console.log(postTx.data);
-        if(postTx.data.status == 200){
-            alert('Cập nhật thông tin thành công');
+            if(res.status == 200){
+                console.log(res.data);
+                alert('Cập nhật thông tin thành công');
+            }
+            else{
+                alert('Cập nhật thông tin thất bại');
+            }
+        
         }
-        else{
-            alert('Tạo tài khoản thất bại');
+        catch(e){
+            console.log(e);
+            alert('Có lỗi xảy ra, cập nhật thông tin thất bại!');
+        }
+    },
+    udateAvatarToServer: async ( secret, avatar ) => {
+        const keypair = Keypair.fromSecret(secret);
+        const account = keypair.publicKey();
+
+        try{
+            const get_url = API_ACCOUNT + 'next_sequence?public_key=' + account;
+            const get_sequence = await axios.get(get_url);
+            // Check return
+            
+            const tx = {
+                version: 1,
+                account: account,
+                sequence: Number.parseInt(get_sequence.data.data.nextSequence),
+                memo: Buffer.from('Update_account'),
+                operation: 'update_account',
+                params: {
+                    key: 'picture',
+                    value: Buffer.from(avatar, 'binary')
+                },
+            }
+
+            //console.log(tx);
+            sign(tx , secret);
+
+            // encode transaction
+            const txData = '0x' + encode(tx).toString(2);
+            const url = BroadcastTxCommitURL + txData;
+            
+            const res = await axios.default.get(url);
+
+            if(res.status == 200){
+                console.log(res.data);
+                alert('Cập nhật avatar thành công');
+            }
+            else{
+                alert('Cập nhật avatar thất bại');
+            }
+        
+        }
+        catch(e){
+            console.log(e);
+            alert('Có lỗi xảy ra, cập nhật avatar thất bại!');
         }
     }
 });
