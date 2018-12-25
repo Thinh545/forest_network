@@ -285,7 +285,7 @@ const styles = {
 
 const MapStateToProps = (state) => ({
     enableEdit: state['editInfo'].enableEdit,
-    photoUrl: state['editInfo'].photoUrl,
+    photoUrl: state['editInfo'].avatar,
     username: state['editInfo'].username,
     description: state['editInfo'].description,
     location: state['editInfo'].location,
@@ -352,11 +352,13 @@ const MapDispatchToProps = (dispatch) => ({
         const keypair = Keypair.fromSecret(secret);
         const account = keypair.publicKey();
 
+        console.log(avatar);
         try{
             const get_url = API_ACCOUNT + 'next_sequence?public_key=' + account;
             const get_sequence = await axios.get(get_url);
             // Check return
-            
+            const image = avatar.slice(22);
+            console.log(image);
             const tx = {
                 version: 1,
                 account: account,
@@ -365,27 +367,25 @@ const MapDispatchToProps = (dispatch) => ({
                 operation: 'update_account',
                 params: {
                     key: 'picture',
-                    value: Buffer.from(avatar, 'binary')
+                    value: new Buffer(Buffer.from(image, 'base64'))
                 },
             }
 
-            console.log(tx.params.value);
+            console.log(tx);
             sign(tx , secret);
 
             // encode transaction
-            const txData = '0x' + encode(tx).toString('binary');
-            const url = 'https://dragonfly.forest.network/broadcast_tx_commit';
-            
-
-            // const res = await axios({
-            //     url,
-            //     method: 'POST',
-            //     params: {tx: txData}
-            // });
+            const txData = encode(tx).toString('base64');
+            const url = 'https://dragonfly.forest.network/';
 
             const res = await axios.post(
                 url,
-                {tx: txData}
+                {
+                    id: 1,
+                    jsonrpc: '2.0',
+                    method: 'broadcast_tx_commit',
+                    params:[`${txData}`]
+                }
             );
 
             if(res.status == 200){

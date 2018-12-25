@@ -27,3 +27,8 @@ export const updateWebsite = ( website ) => ({
     type: 'UPDATEWEBSITE',
     website
 });
+
+export const updateAvatar = ( avatar ) => ({
+    type: 'UPDATEAVATAR',
+    avatar
+});

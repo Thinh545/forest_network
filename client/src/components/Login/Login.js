@@ -11,7 +11,7 @@ import {
     Keypair
 } from 'stellar-base';
 import { updateSecret, updateUserInfo } from '../../redux/actions/RightSide';
-import { updateUsername } from '../../redux/actions/LeftSide';
+import { updateUsername, updateAvatar } from '../../redux/actions/LeftSide';
 import { sign, encode, decode } from './../../helpers/tx/index'
 
 class Login extends Component{
@@ -211,13 +211,20 @@ const mapDispatchToProps = (dispatch) => ({
             const getTx = await axios.get(get_url);
             let tx = getTx.data.data;
             console.log(tx);
-            let name = Buffer.from(tx.name.data).toString('utf8');
-            console.log(name);
+
+            let name = null, avatar = null;
+            if(tx.name)
+                name = Buffer.from(tx.name.data).toString('utf8');
+
+            if(tx.picture)
+                avatar = Buffer.from(tx.picture.data).toString('base64');
+            console.log(avatar);
             
             if(getTx.status == 200){
                 dispatch(updateSecret(secret));
                 dispatch(updateUserInfo(tx));
-                dispatch(updateUsername(name));
+                dispatch(updateUsername(name ? name : '--'));
+                avatar && dispatch(updateAvatar('data:image/png;base64,' + avatar));
                 return true;
             }
             else{
