@@ -4,14 +4,15 @@ import { connect } from 'react-redux';
 import { Input, Icon, Layout, Button, Modal } from 'antd';
 import './style.css';
 import { Link } from 'react-router-dom';
-import  {API_ACCOUNT} from '../../configs/index';
+import  {API_ACCOUNT, BroadcastTxCommitURL, HOST} from '../../configs/index';
 import axios from 'axios';
 import querystring from 'querystring';
 import {
     Keypair
 } from 'stellar-base';
-
-import { sign } from './../../helpers/tx/index'
+import { updateSecret, updateUserInfo } from '../../redux/actions/RightSide';
+import { updateUsername, updateAvatar } from '../../redux/actions/LeftSide';
+import { sign, encode, decode } from './../../helpers/tx/index'
 
 class Login extends Component{
     constructor(props){
@@ -19,7 +20,8 @@ class Login extends Component{
         this.state = {
             modalVisible: false,
             account: '',
-            address: ''
+            address: '',
+            key: 'SDXCBYRWNQRQXZQQNDZFMHJ75WY6H2PIDJGJMTNYBONJVX2RZMFUHUYP'
         }
     }
 
@@ -57,16 +59,28 @@ class Login extends Component{
                         </label>
                         <Layout style = {styles.rightBottomWrapper}>
                             <Input
-                                defaultValue = 'Input your public key'
+                                defaultValue = 'SDXCBYRWNQRQXZQQNDZFMHJ75WY6H2PIDJGJMTNYBONJVX2RZMFUHUYP'
                                 style = {styles.inputStyle}
                                 color = 'black'
+                                onChange = {(e) => {
+                                    this.setState({key: e.target.value});
+                                }}
                             />
                             <Button 
                                 style = {styles.loginButton}
+                                onClick = { async () => {
+                                    if(this.state.key != ''){
+                                        const result = await this.props.login(this.state.key);
+                                        if(result == true){
+                                            this.props.history.push('/home');
+                                        }   
+                                        else{
+                                            alert('Đăng nhập thất bại');
+                                        }
+                                    }
+                                }}
                             >
-                                <Link to = '/'>
-                                    Login
-                                </Link>
+                                Login
                             </Button>
                         </Layout>
                         <Layout style = {styles.signUpWrapper}>
@@ -109,6 +123,120 @@ class Login extends Component{
         )
     }
 }
+
+
+const mapStateToProps = ( state ) => ({
+    
+});
+
+const mapDispatchToProps = (dispatch) => ({
+    _handleSignUp: async (secret, address) => {
+        const keypair = Keypair.fromSecret(secret);
+        const account = keypair.publicKey();
+
+        // const get_url = API_ACCOUNT + 'create_params?account=' + account + '&address=' + address;
+
+        // const getTx = await axios.get(get_url);
+        // let tx = getTx.data.data;
+        // tx.memo = Buffer.from(tx.memo, 'base64');
+
+        // console.log(tx);
+        // sign(tx , secret);
+
+        // tx.memo = tx.memo.toString('base64');
+        // tx.signature = tx.signature.toString('base64');
+
+        // const post_url = HOST + 'commit/transaction';
+
+        // const postTx = await axios.post(
+        //     post_url,
+        //     { tx: tx },
+        // );
+
+        // console.log(postTx.data);
+        // if(postTx.data.status == 200){
+        //     alert('Bạn đã tạo thành công tài khoản ' + address );
+        // }
+        // else{
+        //     alert('Tạo tài khoản thất bại');
+        // }
+        try{
+            const get_url = API_ACCOUNT + 'next_sequence?public_key=' + account;
+            const get_sequence = await axios.get(get_url);
+            // Check return
+            console.log(get_sequence);
+            let tx = {
+                version: 1,
+                account: account,
+                sequence: Number.parseInt(get_sequence.data.data.nextSequence),
+                memo: Buffer.from('Create account'),
+                operation: 'create_account',
+                params: {
+                    address: address
+                },
+            }
+
+            //console.log(tx);
+            sign(tx , secret);
+
+            // encode transaction
+            const txData = '0x' + encode(tx).toString('hex');
+            const url = BroadcastTxCommitURL + txData;
+            
+            const res = await axios.default.get(url)
+
+            if(res.status == 200){
+                console.log(res);
+                alert('Tạo tài khoản thành công');
+            }
+            else{
+                alert('Tạo tài khoản thất bại');
+            }
+        
+        }
+        catch(e){
+            console.log(e);
+            alert('Có lỗi xảy ra, tạo tài khoản thất bại!');
+        }
+
+        
+    },
+    login: async ( secret ) => {
+        try{
+            const keypair = Keypair.fromSecret(secret);
+            const account = keypair.publicKey();
+
+            const get_url = API_ACCOUNT + 'info?public_key=' + account;
+
+            const getTx = await axios.get(get_url);
+            let tx = getTx.data.data;
+            console.log(tx);
+
+            let name = null, avatar = null;
+            if(tx.name)
+                name = Buffer.from(tx.name.data).toString('utf8');
+
+            if(tx.picture)
+                avatar = Buffer.from(tx.picture.data).toString('base64');
+            console.log(avatar);
+            
+            if(getTx.status == 200){
+                dispatch(updateSecret(secret));
+                dispatch(updateUserInfo(tx));
+                dispatch(updateUsername(name ? name : '--'));
+                avatar && dispatch(updateAvatar('data:image/png;base64,' + avatar));
+                return true;
+            }
+            else{
+                return false;
+            }
+        }
+        catch(e){
+            console.log(e);
+            return false;
+        }
+    }
+});
 
 const styles = {
     container: {
@@ -174,42 +302,5 @@ const styles = {
     }
 };
 
-const mapStateToProps = () => ({
-    _handleSignUp: async (secret, address) => {
-        const keypair = Keypair.fromSecret(secret);
-        const account = keypair.publicKey();
-
-        const get_url = API_ACCOUNT + 'create_params?account=' + account + '&address=' + address;
-
-        const getTx = await axios.get(get_url);
-
-        let tx = getTx.data.data;
-        tx.memo = Buffer.from(tx.memo, 'base64');
-
-        sign(tx , secret);
-
-        tx.memo = tx.memo.toString('base64');
-        tx.signature = tx.signature.toString('base64');
-
-        const post_url = API_ACCOUNT + 'create_commit';
-
-        const postTx = await axios.post(
-            post_url,
-            { tx: tx },
-        );
-
-        console.log(postTx.data);
-        if(postTx.data.status == 200){
-            alert('Bạn đã tạo thành công tài khoản ' + address );
-        }
-        else{
-            alert('Tạo tài khoản thất bại');
-        }
-    }
-});
-
-const mapDispatchToProps = () => ({
-
-});
 
 export default connect(mapStateToProps, mapDispatchToProps)(Login);

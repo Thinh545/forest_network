@@ -54,6 +54,5 @@ db.sync().then(async () => {
         var port = server.address().port;
         console.log("Express is working on port " + port);
     });
-}).catch(console.error);
 
 module.exports = app;

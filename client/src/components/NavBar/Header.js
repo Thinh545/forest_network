@@ -10,6 +10,12 @@ import {
     updateLocation,
     updateWebsite,
 } from '../../redux/actions/LeftSide';
+import ImageUploader from 'react-images-upload';
+import axios from 'axios';
+import { API_ACCOUNT, HOST, BroadcastTxCommitURL } from '../../configs/index';
+import { Keypair } from 'stellar-base';
+import { sign, encode } from './../../helpers/tx/index'
+
 
 class Header extends Component {
     constructor(props) {
@@ -22,7 +28,9 @@ class Header extends Component {
             pressSave: false,
             isAffixChange: false,
             tweetModalVisible: false,
-            content: ''
+            content: '',
+            avatar: null,
+            file: null
         }
     }
 
@@ -54,21 +62,45 @@ class Header extends Component {
         })
     }
 
+    onDrop(pictureFiles, pictureDataURLs) {
+		this.setState({
+            avatar: this.state.avatar.concat(pictureFiles),
+        });
+	}
+
     channelProfile = () => {
         if (this.state.isAffixChange) {
             return (
                 [
-                    <Col span={1}> <Avatar shape="square" src={this.props.photoUrl} /></Col>,
+                    <Col span={1}> 
+                        <Avatar shape="square" src={this.props.photoUrl} />
+                    </Col>,
                     <Col span={4} style={{fontSize: '20px' }}><strong>{this.props.username}</strong></Col>
                 ]
             )
         } else {
             return (
                 <Col span={5}>
-                    <img src={this.props.photoUrl} style={{ position: "absolute", borderRadius: "50%", zIndex: 3, top: "-150px", maxWidth: "100%", width: "210px" }}></img>
+                    <img src={this.state.avatar ? this.state.avatar : this.props.photoUrl} style={{ position: "absolute", borderRadius: "50%", zIndex: 3, top: "-150px", maxWidth: "100%", width: "210px" }}></img>
                 </Col>
             )
         }
+    }
+
+    _handleImageChange = (e) => {
+        e.preventDefault();
+    
+        let reader = new FileReader();
+        let file = e.target.files[0];
+    
+        reader.onloadend = () => {
+            this.setState({
+                file: file,
+                avatar: reader.result
+            });
+        }
+    
+        reader.readAsDataURL(file)
     }
 
     render() {
@@ -127,14 +159,20 @@ class Header extends Component {
                         {/* <Col span={1}> <Avatar shape="square" icon="user" /></Col>
 
                         <Col span={4} style={{ width: '230px', fontSize: '20px' }}><strong>Channel</strong></Col> */}
-
+                        {this.props.enableEdit && <Col span={2} align="center">
+                            <input
+                                type = 'file'
+                                style = {{width: '100%'}}
+                                onChange = {this._handleImageChange}
+                            />
+                        </Col>}
                         <Col span={2} align="center">Posts<br /><strong>0</strong></Col>
 
                         <Col span={2} align="center">Following<br /><strong>{this.props.following}</strong></Col>
 
                         <Col span={2} align="center">Followers<br /><strong>{this.props.followers}</strong></Col>
 
-                        <Col span={7}></Col>
+                        <Col span={5}></Col>
                         <Col span={4}>
                             {!this.props.enableEdit && <Button
                                 type='danger'
@@ -175,6 +213,8 @@ class Header extends Component {
                                         website: this.props.website,
                                         pressSave: true
                                     });
+                                    //this.props.updateNameToServer(this.props.secret, this.props.username);
+                                    this.props.udateAvatarToServer(this.props.secret, this.state.avatar);
                                 }}
                             >Save</Button>}
                         </Col>
@@ -245,13 +285,14 @@ const styles = {
 
 const MapStateToProps = (state) => ({
     enableEdit: state['editInfo'].enableEdit,
-    photoUrl: state['editInfo'].photoUrl,
+    photoUrl: state['editInfo'].avatar,
     username: state['editInfo'].username,
     description: state['editInfo'].description,
     location: state['editInfo'].location,
     website: state['editInfo'].website,
     following: state['following'].followings.length,
     followers: state['follower'].followers.length,
+    secret: state['blockchain'].secret
 });
 
 const MapDispatchToProps = (dispatch) => ({
@@ -264,6 +305,103 @@ const MapDispatchToProps = (dispatch) => ({
         dispatch(updateLocation(location));
         dispatch(updateWebsite(website));
     },
+    updateNameToServer: async ( secret, name ) => {
+        const keypair = Keypair.fromSecret(secret);
+        const account = keypair.publicKey();
+
+        try{
+            const get_url = API_ACCOUNT + 'next_sequence?public_key=' + account;
+            const get_sequence = await axios.get(get_url);
+            // Check return
+            const tx = {
+                version: 1,
+                account: account,
+                sequence: Number.parseInt(get_sequence.data.data.nextSequence),
+                memo: Buffer.from('Update_account'),
+                operation: 'update_account',
+                params: {
+                    key: 'name',
+                    value: Buffer.from(name, 'utf8')
+                },
+            }
+
+            //console.log(tx);
+            sign(tx , secret);
+
+            // encode transaction
+            const txData = '0x' + encode(tx).toString('hex');
+            const url = BroadcastTxCommitURL + txData;
+            
+            const res = await axios.default.get(url)
+
+            if(res.status == 200){
+                console.log(res.data);
+                alert('Cập nhật thông tin thành công');
+            }
+            else{
+                alert('Cập nhật thông tin thất bại');
+            }
+        
+        }
+        catch(e){
+            console.log(e);
+            alert('Có lỗi xảy ra, cập nhật thông tin thất bại!');
+        }
+    },
+    udateAvatarToServer: async ( secret, avatar ) => {
+        const keypair = Keypair.fromSecret(secret);
+        const account = keypair.publicKey();
+
+        console.log(avatar);
+        try{
+            const get_url = API_ACCOUNT + 'next_sequence?public_key=' + account;
+            const get_sequence = await axios.get(get_url);
+            // Check return
+            const image = avatar.slice(22);
+            console.log(image);
+            const tx = {
+                version: 1,
+                account: account,
+                sequence: Number.parseInt(get_sequence.data.data.nextSequence),
+                memo: Buffer.from('Update_account'),
+                operation: 'update_account',
+                params: {
+                    key: 'picture',
+                    value: new Buffer(Buffer.from(image, 'base64'))
+                },
+            }
+
+            console.log(tx);
+            sign(tx , secret);
+
+            // encode transaction
+            const txData = encode(tx).toString('base64');
+            const url = 'https://dragonfly.forest.network/';
+
+            const res = await axios.post(
+                url,
+                {
+                    id: 1,
+                    jsonrpc: '2.0',
+                    method: 'broadcast_tx_commit',
+                    params:[`${txData}`]
+                }
+            );
+
+            if(res.status == 200){
+                console.log(res.data);
+                alert('Cập nhật avatar thành công');
+            }
+            else{
+                alert('Cập nhật avatar thất bại');
+            }
+        
+        }
+        catch(e){
+            console.log(e);
+            alert('Có lỗi xảy ra, cập nhật avatar thất bại!');
+        }
+    }
 });
 
 export default connect(MapStateToProps, MapDispatchToProps)(Header);

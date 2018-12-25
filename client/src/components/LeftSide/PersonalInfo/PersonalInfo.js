@@ -16,7 +16,7 @@ class PersonalInfo extends Component {
         return (
             <Content style={styles.wrapper}>
                 {!this.props.enableEdit && <Content style={styles.username}>
-                    {this.props.username}
+                    {this.props.username ? this.props.username : '--'}
                 </Content>}
                 {this.props.enableEdit && <Input
                     style={styles.username}

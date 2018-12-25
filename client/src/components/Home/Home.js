@@ -9,6 +9,14 @@ import Follower from '../Follower/Follower';
 import Following from '../Following/Following';
 import Header from '../NavBar/Header';
 import UserBlockChainInfo from '../RightSide/UserBlockChainInfo';
+import axios from 'axios';
+import { API_ACCOUNT, HOST } from '../../configs/index';
+import {
+    Keypair
+} from 'stellar-base';
+
+import { sign } from './../../helpers/tx/index'
+import { updateUsername } from '../../redux/actions/LeftSide';
 
 const { Content, Sider } = Layout;
 const TabPane = Tabs.TabPane;
@@ -54,11 +62,11 @@ class Home extends Component{
 }
 
 const mapStateToProps = ( state ) => ({
-
+    secret: state['blockchain'].secret
 });
 
 const mapDispatchToProps = ( dispatch ) => ({
 
-});
+}); 
 
 export default connect(mapStateToProps, mapDispatchToProps)(Home);

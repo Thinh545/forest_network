@@ -1,6 +1,7 @@
 let initialState = {
     enableEdit: false,
-    photoUrl: 'YoutubeAva.png',
+    username: '',
+    avatar: 'YoutubeAva.png',
     username: 'Youtube',
     channel: '@Youtube',
     description: 'Imagine if you couldn’t watch the videos you love. We support copyright reform with an Article 13 that works for everyone. #SaveYourInternet',
@@ -23,6 +24,8 @@ const editInfo = (state = initialState, action) => {
             return { ...state, location: action.location }
         case 'UPDATEWEBSITE':
             return { ...state, website: action.website }
+        case 'UPDATEAVATAR':
+            return { ...state, avatar: action.avatar }
         default:
             return state
     }
