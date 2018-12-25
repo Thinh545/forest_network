@@ -27,8 +27,6 @@ const v1 = require('./../lib/tx/v1');
 // const transaction = require('./../lib/tx/index');
 const transaction = require('./../lib/tx/index');
 
-const server = require('./../lib/server');
-
 
 module.exports = {
     getInfo: async (req, res) => {
