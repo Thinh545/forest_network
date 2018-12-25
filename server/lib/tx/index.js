@@ -12,8 +12,12 @@ const PlainTextContent = vstruct([
   { name: 'text', type: vstruct.VarString(vstruct.UInt16BE) },
 ]);
 
+const Content = vstruct([
+  { name: 'type', type: vstruct.UInt8 },
+]);
+
 function contentDecode(data) {
-  return PlainTextContent.decode(data);
+  return Content.decode(data);
 }
 
 function followingsDecode(data) {

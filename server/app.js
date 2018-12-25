@@ -19,7 +19,6 @@ const Account = require('./lib/account')
 const accountRouter = require('./routes/account');
 const postRouter = require('./routes/post');
 const interactRouter = require('./routes/interact');
-const commitRouter = require('./routes/commit')
 const app = express();
 
 app.use(cors({ credentials: true, origin: true }));
@@ -33,7 +32,6 @@ app.use(bodyParser.json());
 app.use('/account', accountRouter);
 app.use('/post', postRouter);
 app.use('/interact', interactRouter);
-app.use('/commit', commitRouter);
 
 let server;
 db.sync().then(async () => {
@@ -50,7 +48,7 @@ db.sync().then(async () => {
         });
     }
 
-    await BlockSync.sync();
+    BlockSync.sync();
 
     server = app.listen(process.env.PORT || 5000, function () {
         var port = server.address().port;

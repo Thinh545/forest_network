@@ -10,7 +10,7 @@ const Info = require('./info')
 const Post = require('./post')
 const Interact = require('./interact')
 
-const { decode, verify, hash, followingsDecode } = require('./tx');
+const { decode, verify, hash, contentDecode } = require('./tx');
 
 // 24 hours
 const BANDWIDTH_PERIOD = 86400;
@@ -34,7 +34,6 @@ const BlockSync = {
     if (latestBlock) {
       return latestBlock.height;
     }
-
     return 0;
   },
 
@@ -52,38 +51,7 @@ const BlockSync = {
     } else {
       this.currentBlock = null;
     }
-    // const hash = req.hash.toString('hex').toUpperCase();
-    // const height = req.header.height.toString();
-    // const time = moment
-    //   .unix(Number(req.header.time.seconds))
-    //   .toDate();
-    // console.log(`Begin block ${height} hash ${hash}`);
-    // this.blockTransaction = await db.transaction();
-    // const previousBlock = await Block.findOne({
-    //   order: [['time', 'DESC']],
-    // }, { transaction: this.blockTransaction });
-    // this.appHash = previousBlock ? Buffer.from(previousBlock.appHash, 'hex') : INITIAL_APP_HASH;
-    // // Add block to db
-    // this.currentBlock = { height, hash, time };
-    // return {};
   },
-
-  // async endBlock(_req) {
-  //   console.log('End block');
-  //   await Block.create({
-  //     ...this.currentBlock,
-  //     appHash: this.appHash.toString('hex').toUpperCase(),
-  //   }, { transaction: this.blockTransaction });
-  //   return {};
-  // },
-
-  // async commit(_req) {
-  //   console.log(`Commit block with app hash ${this.appHash.toString('hex').toUpperCase()}`);
-  //   await this.blockTransaction.commit();
-  //   return {
-  //     data: this.appHash,
-  //   };
-  // },
 
   async executeTx(buf, dbTransaction, isCheckTx) {
     // Tag by source account and to account
@@ -106,16 +74,8 @@ const BlockSync = {
     if (!account) {
       throw Error('Account does not exists');
     }
-    // Check sequence
-    // const nextSequence = new Decimal(account.sequence).add(1);
-    // if (!nextSequence.equals(tx.sequence)) {
-    //   throw Error('Sequence mismatch');
-    // }
+    // ++sequence
     account.sequence = tx.sequence;
-    // Check memo
-    if (tx.memo.length > 32) {
-      throw Error('Memo has more than 32 bytes.');
-    }
     // Update bandwidth
     if (this.currentBlock) {
       const diff = account.bandwidthTime
@@ -150,7 +110,7 @@ const BlockSync = {
         address,
       }, { transaction: dbTransaction })
 
-      console.log(`${tx.hash}: created ${address}`);
+      console.log(`created ${address}`);
     } else if (operation === 'payment') {
       const { address, amount } = tx.params;
       const found = await Account.findByPk(address, { transaction: dbTransaction });
@@ -170,7 +130,7 @@ const BlockSync = {
       account.balance = new Decimal(account.balance).sub(amount).toFixed();
       await found.save({ transaction: dbTransaction });
       await account.save({ transaction: dbTransaction });
-      console.log(`${tx.hash}: ${account.address} transfered ${amount} to ${address}`);
+      console.log(`${account.address} transfered ${amount} to ${address}`);
     } else if (operation === 'post') {
       const { content, keys } = tx.params;
       await Post.create({
@@ -179,7 +139,7 @@ const BlockSync = {
         content: content,
         keys: keys,
       }, { transaction: dbTransaction })
-      console.log(`${tx.hash}: ${account.address} posted ${content.length} bytes with ${keys.length} keys`);
+      console.log(`${account.address} posted ${content.length} bytes with ${keys.length} keys`);
     } else if (operation === 'update_account') {
       const { key, value } = tx.params;
       const found = await Info.findByPk(account.address);
@@ -198,7 +158,7 @@ const BlockSync = {
           break;
       }
       await found.save({ transaction: dbTransaction });
-      console.log(`${tx.hash}: ${account.address} update ${key} with ${value.length} bytes`);
+      console.log(`${account.address} update ${key} with ${value.length} bytes`);
     } else if (operation === 'interact') {
       const { object, content } = tx.params;
       // Check if object exists
@@ -206,13 +166,33 @@ const BlockSync = {
       if (!transaction) {
         throw Error('Object does not exist');
       }
-      await Interact.create({
-        hash: object,
-        author: tx.account,
-        content: content,
-      }, { transaction: dbTransaction })
+      const { type } = contentDecode(content);
+      switch (type) {
+        case 2:
+          const found = await Interact.find({
+            where: {
+              hash: object,
+              type: type,
+              author: tx.account,
+            }
+          }, { transaction: dbTransaction })
+          if (found) {
+            found.content = content;
+            await found.save({ transaction: dbTransaction });
+            break;
+          }
+        case 1:
+          await Interact.create({
+            hash: object,
+            author: tx.account,
+            type: type,
+            content: content,
+          }, { transaction: dbTransaction })
+          break;
+      }
+
       tx.params.address = transaction.author;
-      console.log(`${tx.hash}: ${account.address} interact ${object} with ${content.length} bytes`);
+      console.log(`${account.address} interact ${object} with ${content.length} bytes`);
     } else {
       throw Error('Operation is not support.');
     }
@@ -272,35 +252,12 @@ const BlockSync = {
     }
   },
 
-  // async query(req) {
-  //   try {
-  //     const parts = req.path.split('/');
-  //     if (parts.length === 3 && parts[1] === 'accounts') {
-  //       const account = await Account.findByPk(parts[2]);
-  //       if (!account) {
-  //         throw Error('Account not found');
-  //       }
-  //       return {
-  //         value: Buffer.from(JSON.stringify({
-  //           address: account.address,
-  //           balance: Number(account.balance),
-  //           sequence: Number(account.sequence),
-  //           bandwidth: Number(account.bandwidth),
-  //           bandwidthTime: account.bandwidthTime,
-  //         })),
-  //       }
-  //     }
-  //   } catch (err) {
-  //     return { code: 1, log: err.toString() };
-  //   }
-  // },
-
   async sync() {
     console.log('SYNCING........');
     let height = parseInt(await this.getInfo()) + 1;
+
     while (true) {
       try {
-        console.log(height)
         const block = await Client.block({ height });
         const numTx = parseInt(block.block.header.num_txs);
         const txs = block.block.data.txs;
@@ -326,15 +283,11 @@ const BlockSync = {
         console.log('SYNCED.........')
         setTimeout(() => {
           this.sync();
-        }, 10000)
+        }, 60000)
         return;
       }
     }
   },
-
-  async commitTransaction(tx) {
-    Client.broadcast_tx_commit({ tx: tx });
-  }
 };
 
 module.exports = BlockSync
