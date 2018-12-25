@@ -213,8 +213,8 @@ class Header extends Component {
                                         website: this.props.website,
                                         pressSave: true
                                     });
-                                    this.props.updateNameToServer(this.props.secret, this.props.username);
-                                    //this.props.udateAvatarToServer(this.props.secret, this.state.avatar);
+                                    //this.props.updateNameToServer(this.props.secret, this.props.username);
+                                    this.props.udateAvatarToServer(this.props.secret, this.state.avatar);
                                 }}
                             >Save</Button>}
                         </Col>
@@ -369,14 +369,24 @@ const MapDispatchToProps = (dispatch) => ({
                 },
             }
 
-            //console.log(tx);
+            console.log(tx.params.value);
             sign(tx , secret);
 
             // encode transaction
-            const txData = '0x' + encode(tx).toString(2);
-            const url = BroadcastTxCommitURL + txData;
+            const txData = '0x' + encode(tx).toString('binary');
+            const url = 'https://dragonfly.forest.network/broadcast_tx_commit';
             
-            const res = await axios.default.get(url);
+
+            // const res = await axios({
+            //     url,
+            //     method: 'POST',
+            //     params: {tx: txData}
+            // });
+
+            const res = await axios.post(
+                url,
+                {tx: txData}
+            );
 
             if(res.status == 200){
                 console.log(res.data);
