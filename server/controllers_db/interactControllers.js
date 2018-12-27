@@ -18,8 +18,7 @@ module.exports = {
             res.status(400)
             data_return.msg = 'Invalid <tx_hash> string !'
         } else {
-            const found = Transactions.findByPk(tx_hash);
-            if (found) {
+            try {
                 res.status(200);
                 data_return.msg = 'OK !';
                 data_return.data = await Interact.findAll({
@@ -28,6 +27,9 @@ module.exports = {
                     },
                     raw: true,
                 })
+            } catch (err) {
+                console.log(err);
+                res.status(500);
             }
         }
 

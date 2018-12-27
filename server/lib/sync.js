@@ -9,7 +9,7 @@ const Transaction = require('./transaction');
 const Info = require('./info')
 const Post = require('./post')
 const Interact = require('./interact')
-const { decode, verify, hash, contentDecode } = require('./tx');
+const { decode, hash, Content } = require('./tx');
 
 // 24 hours
 const BANDWIDTH_PERIOD = 86400;
@@ -132,21 +132,14 @@ const BlockSync = {
     } else if (operation === 'interact') {
       const { object, content } = tx.params;
       // Check if object exists
-      const transaction = await Transaction.find({
-        where: {
-          hash: object
-        },
-      }, { transaction: dbTransaction });
-      if (!transaction) {
-        throw Error('Object does not exist');
-      }
-      const { type } = contentDecode(content);
+      const { type } = Content.decode(content);
+      console.log(type)
       switch (type) {
         case 2:
           const found = await Interact.find({
             where: {
               hash: object,
-              type: type,
+              type: 2,
               author: tx.account,
             }
           }, { transaction: dbTransaction })
@@ -164,7 +157,6 @@ const BlockSync = {
           }, { transaction: dbTransaction })
           break;
       }
-      tx.params.address = transaction.author;
     } else {
       throw Error('Operation is not support.');
     }
@@ -200,7 +192,7 @@ const BlockSync = {
     }
   },
 
-  async commitBlock(block) {  
+  async commitBlock(block) {
     console.log("\tON COMMIT BLOCK...")
     const numTx = parseInt(block.header.num_txs);
     const txs = block.data.txs;

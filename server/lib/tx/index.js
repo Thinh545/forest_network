@@ -16,14 +16,6 @@ const Content = vstruct([
   { name: 'type', type: vstruct.UInt8 },
 ]);
 
-function contentDecode(data) {
-  return Content.decode(data);
-}
-
-function followingsDecode(data) {
-  return Followings.decode(data);
-}
-
 function encode(tx) {
   switch (tx.version) {
     case 1:
@@ -74,4 +66,4 @@ function hash(tx) {
     .toUpperCase();
 }
 
-module.exports = { encode, decode, verify, sign, hash, followingsDecode, contentDecode };
+module.exports = { encode, decode, verify, sign, hash, Content };

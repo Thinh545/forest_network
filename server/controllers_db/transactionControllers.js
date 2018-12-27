@@ -51,7 +51,7 @@ module.exports = {
 
         try {
             if (!_.isEmpty(hash)) {
-                data.msg = "OK !";
+                data_return.msg = "OK !";
                 data_return.data = await Transactions.find({
                     where: {
                         hash: hash,
