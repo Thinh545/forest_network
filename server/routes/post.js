@@ -1,10 +1,12 @@
 const express = require('express');
 const {
-    getPosts,
+    getAuthorPosts,
+    getPost,
 } = require('./../controllers_db/postControllers');
 
 const router = express.Router();
 
-router.get('/author', getPosts);
+router.get('/author', getAuthorPosts);
+router.get('/detail', getPost);
 
 module.exports = router;

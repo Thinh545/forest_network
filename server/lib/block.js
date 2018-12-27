@@ -10,15 +10,6 @@ const Block = db.define('block', {
     type: Sequelize.DATE,
     allowNull: false,
   },
-  hash: {
-    type: Sequelize.STRING,
-    allowNull: false,
-    unique: true,
-  },
-  appHash: {
-    type: Sequelize.STRING,
-    allowNull: false,
-  }
 });
 
 module.exports = Block;

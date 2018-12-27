@@ -13,16 +13,10 @@ const Interact = db.define('interact', {
     },
     type: {
         type: Sequelize.SMALLINT,
-        allowNull: false,
     },
     content: {
         type: Sequelize.STRING.BINARY,
-        allowNull: false,
     }
-})
-
-Interact.belongsTo(Transaction, {
-    foreignKey: 'hash'
 })
 
 module.exports = Interact;

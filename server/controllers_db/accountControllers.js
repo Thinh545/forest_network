@@ -47,7 +47,6 @@ module.exports = {
             } catch (err) {
                 res.status(500);
             }
-
         } else {
             res.status(400);
             data_return.msg = 'public_key must not empty !';
@@ -108,11 +107,13 @@ module.exports = {
                     data_return.data = {
                         nextSequence,
                     };
+                } else {
+                    data_return.msg = "not found account";
+                    res.status(404);
                 }
             } catch (err) {
                 res.status(500);
             }
-
         } else {
             res.status(400);
             data_return.msg = 'public_key must not empty !';

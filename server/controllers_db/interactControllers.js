@@ -33,4 +33,29 @@ module.exports = {
 
         res.json(data_return);
     },
+    getAuthorInteracts: async (req, res) => {
+        const public_key = req.query.public_key;
+
+        let data_return = {
+            msg: 'Unexpected Error',
+            data: {}
+        }
+
+        if (_.isEmpty(public_key) || !_.isString(public_key)) {
+            res.status(400)
+            data_return.msg = 'Invalid <public_key> string !'
+        } else {
+            const found = await Interact.findAll({
+                where: { author: public_key, },
+                raw: true,
+            })
+            if (found) {
+                res.status(200);
+                data_return.msg = 'OK !';
+                data_return.data = found
+            }
+        }
+
+        res.json(data_return);
+    },
 }
